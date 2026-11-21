@@ -1,6 +1,30 @@
 # DropCheck
 
-Chrome extension that shows observable dropshipping signals on online stores.
+Chrome extension that flags dropshipping signals on Swedish and Norwegian online stores
+and explains each one. It reports observations about a page, not a judgment of the
+company.
+
+## What it checks
+
+Each signal scores points in one of four categories. Every category is capped, so no
+single kind of evidence can decide the verdict on its own.
+
+- **Supply:** dropshipping fulfilment apps (DSers, CJ Dropshipping, Zendrop, AutoDS,
+  Spocket, Oberlo), product images that keep AliExpress or Amazon file names, stated
+  delivery times of 10 days or more, themes marketed to dropshippers.
+- **Identity:** a domain registered less than six months ago, no company registration
+  or VAT number, a free-mail contact address, unfilled template text.
+- **Sales pressure:** countdown timers, "only N left" and "N people viewing" counters.
+- **Pricing:** most products marked down 50 % or more from a struck-through price.
+
+The verdict is *Likely reseller* (60 points or more), *Mixed signals* (30 or more) or
+*No reseller signals found*. The platform, print-on-demand and review apps, cheap
+top-level domains, payment logos and the detected market are shown as context and
+score nothing.
+
+Sweden and Norway have market profiles: org. number formats with check digits, address
+patterns and local payment methods. Keyword lists cover English, Swedish, Norwegian
+and German. Stores in other countries are scored with the generic patterns only.
 
 ## Layout
 
@@ -13,7 +37,8 @@ extension/                 load this folder in Chrome
   background/score.js      rules -> verdict (pure, shared with Node)
   background/worker.js     service worker: domain age (RDAP), scoring, cache, badge
   rules/signals.json       weights, category caps, band thresholds
-  popup/                   verdict, fired rules, context, "Find the source"
+  popup/                   verdict, fired rules, context, "Find the source",
+                           automatic scanning setting
 eval/
   run.js                   Puppeteer harness -> eval/results.csv + false positive rate
 test/                      node:test unit tests; se.test.js and no.test.js hold the
@@ -39,10 +64,15 @@ test/                      node:test unit tests; se.test.js and no.test.js hold 
 After any change to `rules/signals.json` or a detector, re-run the evaluation and watch
 the false positive rate on the legitimate stores (target: under 10 %).
 
-## What leaves the browser
+## Network requests
 
-- The registrable domain name goes to rdap.org, which forwards the lookup to the
-  domain's registry, to find its registration date (cached 30 days).
-- An image URL goes to Google Lens, only when the user clicks "Find the source".
+Analysis runs in the browser. Besides the page itself, DropCheck makes these requests:
+
+- **The store:** up to seven of its own pages (terms, shipping, contact and similar)
+  and, on Shopify, `/products.json`, all without cookies and cached 24 hours. Product
+  images are loaded from the store only when the user clicks "Show product images".
+- **rdap.org:** the registrable domain name, to find its registration date. rdap.org
+  forwards the lookup to the domain's registry. Cached 30 days.
+- **Google Lens:** an image URL, only when the user clicks an image under "Find the source".
 
 Nothing else is sent anywhere.

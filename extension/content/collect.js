@@ -6,7 +6,7 @@
 // in chrome.storage.local so browsing a store does not refetch them on every page.
 (() => {
   const D = globalThis.DropCheckDetectors;
-  const SITE_FACTS_VERSION = 1;
+  const SITE_FACTS_VERSION = 2;   // bump when site-level detectors change
   const SITE_TTL_MS = 24 * 60 * 60 * 1000;
   const FETCH_TIMEOUT_MS = 6000;
 
@@ -287,14 +287,17 @@
     const discount = catalog && catalog.offs.length >= pageDiscount.sampled
       ? { source: "catalog", sampled: catalog.offs.length, offs: catalog.offs }
       : pageDiscount;
-    const lang = (document.documentElement.lang || "").toLowerCase();
+    const shopifyCountry = (code.match(/Shopify\.country\s*=\s*"([A-Z]{2})"/) || [])[1] || "";
+    const market = D.detectMarket({
+      host: location.hostname, lang: document.documentElement.lang || "", shopifyCountry, text
+    });
 
     return {
       ...base,
       apps: D.detectApps(code),
       theme: D.detectTheme(code),
       tld: D.tldInfo(location.hostname),
-      presentsSwedish: lang.startsWith("sv") || location.hostname.endsWith(".se") || /\d\s?kr\b|\bSEK\b/.test(text),
+      market,
       urgency: {
         countdown: D.detectCountdownText(text) || hasCountdownElement(),
         stock: D.detectStockUrgency(text),

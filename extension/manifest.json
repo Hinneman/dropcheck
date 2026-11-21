@@ -9,7 +9,7 @@
   "action": { "default_popup": "popup/popup.html", "default_title": "DropCheck" },
   "content_scripts": [{
     "matches": ["https://*/*"],
-    "js": ["content/detectors.js", "content/collect.js"],
+    "js": ["content/markets.js", "content/detectors.js", "content/collect.js"],
     "run_at": "document_idle"
   }]
 }

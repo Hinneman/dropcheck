@@ -1,8 +1,10 @@
 // Turns a signal object into a verdict using the weighted rules in rules/signals.json.
 // Pure: no chrome.* calls, so the same code runs in the service worker and in Node.
+import "../content/markets.js";
 import "../content/detectors.js";
 
 const D = globalThis.DropCheckDetectors;
+const { MARKETS } = globalThis.DropCheckMarkets;
 
 export const SUPPLY_APPS = {
   dsers: "DSers", cj: "CJ Dropshipping", zendrop: "Zendrop",
@@ -96,10 +98,12 @@ function contextNotes(s) {
     else notes.push(`Domain age for ${s.domain.name} is unknown (registry lookup unavailable).`);
   }
   if (s.tld?.cheap) notes.push(`Uses the .${s.tld.tld} top-level domain.`);
+  const market = s.market && MARKETS[s.market.id];
+  if (market) notes.push(`Market: ${market.name} (from the ${s.market.reason}).`);
   const pm = s.paymentMethods || [];
   if (pm.length) notes.push(`Payment logos: ${pm.join(", ")}.`);
-  if (s.presentsSwedish && pm.length && !pm.some(m => D.LOCAL_SE_PAYMENTS.includes(m))) {
-    notes.push("Presents itself as Swedish but shows no Klarna, Swish or invoice option.");
+  if (market && pm.length && !pm.some(m => market.localPayments.includes(m))) {
+    notes.push(`Presents itself as ${market.name} but shows no ${market.localPaymentLabel} option.`);
   }
   if (s.identity) {
     if (s.identity.orgNumbers.length) notes.push(`Org. no. shown: ${s.identity.orgNumbers.join(", ")}.`);
@@ -119,10 +123,15 @@ export function scoreSignals(signals, config) {
     return { ...base, band: "not_store", score: 0, fired: [], context: [] };
   }
 
+  // Per-market changes to a rule's weight or params, e.g. a market where showing a
+  // company registration number is not expected.
+  const overrides = (signals.market && config.marketOverrides?.[signals.market.id]) || {};
+
   const fired = [];
-  for (const rule of config.rules) {
+  for (const base of config.rules) {
+    const rule = { ...base, ...overrides[base.id] };
     const test = TESTS[rule.id];
-    if (!test) continue;
+    if (!test || rule.weight <= 0) continue;
     const detail = test(signals, rule.params || {});
     if (detail === null) continue;
     fired.push({

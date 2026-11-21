@@ -1,4 +1,5 @@
 // Service worker: receives page signals, adds domain age, scores, caches the verdict.
+import "../content/markets.js";
 import "../content/detectors.js";
 import { scoreSignals } from "./score.js";
 
@@ -68,7 +69,7 @@ async function getVerdict(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["content/detectors.js", "content/collect.js"]
+      files: ["content/markets.js", "content/detectors.js", "content/collect.js"]
     });
   } catch (err) {
     waiters.delete(tabId);

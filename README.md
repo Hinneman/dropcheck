@@ -7,6 +7,7 @@ Chrome extension that shows observable dropshipping signals on online stores.
 ```
 extension/                 load this folder in Chrome
   manifest.json
+  content/markets.js       market profiles (SE, NO) and keyword lists per language
   content/detectors.js     pure detector functions (unit-tested)
   content/collect.js       reads the page, builds the signal object
   background/score.js      rules -> verdict (pure, shared with Node)

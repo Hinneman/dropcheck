@@ -1,6 +1,7 @@
 // Pure detector functions: strings in, plain values out. No DOM access, so each one
 // can be unit-tested in Node (test/detectors.test.js).
 //
+// Keyword lists and market formats come from markets.js, which must load first.
 // Loaded three ways: as a content script before collect.js, imported for its side
 // effect by the module service worker, and imported by the Node tests. It therefore
 // has no import/export and only attaches itself to globalThis. The IIFE keeps a
@@ -73,13 +74,14 @@
     shoppay:    /shop[\s_-]?pay|shopify_pay/,
     klarna:     /klarna/,
     swish:      /\bswish\b/,
+    vipps:      /\bvipps\b/,
+    mobilepay:  /mobilepay/,
     invoice:    /\bfaktura\b|pay by invoice|\brechnung\b/,
     svea:       /\bsvea\b/,
     qliro:      /qliro/,
     walley:     /walley/,
     trustly:    /trustly/
   };
-  const LOCAL_SE_PAYMENTS = ["klarna", "swish", "invoice", "svea", "qliro", "walley", "trustly"];
 
   // `paymentMarkup` is icon/alt/class markup plus scripts, not the visible text:
   // Swedish "Visa mer" ("show more") would otherwise read as a Visa card logo.
@@ -129,27 +131,44 @@
     return { tld, cheap: CHEAP_TLDS.includes(tld) };
   }
 
+  // ---------- Keywords from markets.js ----------
+
+  const { LANGUAGES, MARKETS } = globalThis.DropCheckMarkets ||
+    (() => { throw new Error("markets.js must load before detectors.js"); })();
+
+  // Union of one keyword list across all languages, as regex alternation source.
+  const words = key => [...new Set(Object.values(LANGUAGES).flatMap(l => l[key] || []))]
+    .sort((a, b) => b.length - a.length).join("|");
+
+  // Word boundaries that also understand å, ä, ö, æ, ø, ü (JS \b treats them as non-word).
+  const LETTER = "a-z0-9åäöæøüß";
+  const W0 = `(?<![${LETTER}])`, W1 = `(?![${LETTER}])`;
+
   // ---------- Content: urgency ----------
 
+  const COUNTDOWN_WORD_RE = new RegExp(`${W0}(${words("sale")})${W1}`, "i");
+  const STOCK_RE = new RegExp(`${W0}(${words("only")})\\s+\\d{1,2}\\s+(${words("left")})${W1}`, "i");
+  const VIEWERS_RE = new RegExp(`${W0}\\d{1,3}\\s+(${words("people")})${W1}.{0,30}${W0}(${words("viewing")})${W1}`, "i");
+
   function detectCountdownText(text) {
-    return /\b\d{1,2}:\d{2}:\d{2}\b/.test(text) &&
-      /\b(ends?|ending|slutar|rea|offer|erbjudande|deal|sale|kampanj)\b/i.test(text);
+    return /\b\d{1,2}:\d{2}:\d{2}\b/.test(text) && COUNTDOWN_WORD_RE.test(text);
   }
 
   function detectStockUrgency(text) {
-    return /\b(only|bara|endast|just|nur noch)\s+\d{1,2}\s+(left|kvar|items? left|in stock|i lager|übrig)/i.test(text);
+    return STOCK_RE.test(text);
   }
 
   function detectViewerCount(text) {
-    return /\b\d{1,3}\s+(people|personer|others|andra|personen)\b.{0,30}\b(viewing|looking|tittar|kollar|ser på|watching|sehen)/i.test(text);
+    return VIEWERS_RE.test(text);
   }
 
   // ---------- Content: shipping ----------
 
-  const SHIP_WORDS = /(ship|deliver|dispatch|transit|leverans|levere|frakt|skickas|postnord|lieferung|versand|zustellung)/i;
-  const NOT_SHIP_WORDS = /(return|retur|ångerrätt|angerratt|refund|återbetal|garanti|warranty|reklamation|processing|handling|behandl|hantering|exchange|byte|widerruf)/i;
-  const UNIT = "(?:(?:business|working|arbets|bank|var|werk)[\\s-]?)?(days?|dagar|dygn|dgr|weeks?|veckor|tage|wochen)\\b";
-  const RANGE_RE = new RegExp(`\\b(\\d{1,2})\\s*(?:-|–|—|to|till|à|bis)\\s*(\\d{1,2})\\s*${UNIT}`, "gi");
+  const SHIP_WORDS = new RegExp(`(${words("ship")})`, "i");
+  const NOT_SHIP_WORDS = new RegExp(`(${words("notShip")})`, "i");
+  const WEEK_UNIT_RE = new RegExp(`^(?:${words("weeks")})$`, "i");
+  const UNIT = `(?:(?:${words("dayPrefix")})[\\s-]?)?(${words("days")}|${words("weeks")})${W1}`;
+  const RANGE_RE = new RegExp(`\\b(\\d{1,2})\\s*(?:-|–|—|to|till|til|à|bis)\\s*(\\d{1,2})\\s*${UNIT}`, "gi");
   const SINGLE_RE = new RegExp(`\\b(\\d{1,2})\\s*${UNIT}`, "gi");
 
   function clauseAround(text, start, end) {
@@ -165,7 +184,7 @@
   }
 
   function toDays(n, unit) {
-    return /week|veck|woch/i.test(unit) ? n * 7 : n;
+    return WEEK_UNIT_RE.test(unit) ? n * 7 : n;
   }
 
   // Returns every stated delivery window as {min, max} in days. Windows next to
@@ -192,24 +211,54 @@
 
   // ---------- Content: identity ----------
 
-  const ORG_NR_RE = /\b\d{6}-\d{4}\b/g;   // Swedish organisation number
-  const COMPANY_ID_RE = /\b(org\.?\s*(nr|nummer|no)|organisationsnummer|vat\s*(no|number|nr|id|reg)?|momsreg|company\s*(no|number|reg)|registered in|registration (no|number)|kvk|cvr|y-tunnus|ust-?id|handelsregister|hrb)\b[^\n]{0,25}\d{4}/i;
+  // Registration wording followed by a number, for markets without a profile.
+  const COMPANY_ID_RE = /\b(org\.?\s*(nr|nummer|no)|organisationsnummer|organisasjonsnummer|vat\s*(no|number|nr|id|reg)?|momsreg|mva|company\s*(no|number|reg)|registered in|registration (no|number)|kvk|cvr|y-tunnus|ust-?id|handelsregister|hrb)\b[^\n]{0,25}\d{4}/i;
 
+  // Org. numbers in every market format, keeping only those with a valid check digit.
   function findCompanyIds(text) {
-    const orgNumbers = [...new Set(text.match(ORG_NR_RE) || [])].slice(0, 5);
-    return { orgNumbers, hasCompanyId: orgNumbers.length > 0 || COMPANY_ID_RE.test(text) };
+    const orgNumbers = new Set();
+    for (const market of Object.values(MARKETS)) {
+      const { re, valid } = market.orgNumber;
+      for (const m of text.matchAll(re)) {
+        const n = (m[1] || m[2]).trim();
+        if (valid(n)) orgNumbers.add(n);
+      }
+    }
+    const list = [...orgNumbers].slice(0, 5);
+    return { orgNumbers: list, hasCompanyId: list.length > 0 || COMPANY_ID_RE.test(text) };
   }
 
+  const GENERIC_ADDRESS_RES = [
+    /\b\d+\s+[A-Z][a-z]+\s+(Street|St\.|Road|Rd\.|Avenue|Ave\.?|Lane|Way|Boulevard|Blvd)\b/,
+    /[a-zäöü]+(straße|strasse|weg|platz|gasse)\s+\d+/i
+  ];
+  const ADDRESS_RES = [...Object.values(MARKETS).flatMap(m => m.addressRes), ...GENERIC_ADDRESS_RES];
+
   function detectAddress(text) {
-    return /\b\d{3}\s?\d{2}\s+[A-ZÅÄÖ][a-zåäö]{2,}/.test(text) ||                          // 112 51 Stockholm
-      /\b[A-ZÅÄÖ][a-zåäö]+(gatan|vägen|gata|väg|torget|stigen|allén|backen|plan|gränd)\s+\d+/.test(text) ||
-      /\b\d+\s+[A-Z][a-z]+\s+(Street|St\.|Road|Rd\.|Avenue|Ave\.?|Lane|Way|Boulevard|Blvd)\b/.test(text) ||
-      /[a-zäöü]+(straße|strasse|weg|platz|gasse)\s+\d+/i.test(text);
+    return ADDRESS_RES.some(re => re.test(text));
+  }
+
+  // Which market the store presents itself to. The domain is the strongest claim,
+  // then page language, then Shopify's market setting, then a currency code.
+  function detectMarket({ host = "", lang = "", shopifyCountry = "", text = "" }) {
+    const entries = Object.entries(MARKETS);
+    const pick = (test, reason) => {
+      const hit = entries.find(([, m]) => test(m));
+      return hit ? { id: hit[0], name: hit[1].name, reason } : null;
+    };
+    const tld = host.toLowerCase().split(".").pop();
+    const code = lang.toLowerCase().split("-")[0];
+    return pick(m => m.tlds.includes(tld), `.${tld} domain`) ||
+      (code && pick(m => m.langs.includes(code), `page language "${lang}"`)) ||
+      (shopifyCountry && pick(m => m.country === shopifyCountry.toUpperCase(), `Shopify market ${shopifyCountry}`)) ||
+      pick(m => m.currencies.some(c => new RegExp(`\\b${c}\\b`).test(text)), "currency code") ||
+      null;
   }
 
   const FREEMAIL = new Set([
     "gmail.com", "googlemail.com", "hotmail.com", "hotmail.se", "outlook.com", "outlook.se",
     "live.com", "live.se", "yahoo.com", "yahoo.se", "icloud.com", "me.com", "aol.com",
+    "hotmail.no", "outlook.no", "live.no", "yahoo.no", "online.no",
     "protonmail.com", "proton.me", "gmx.com", "gmx.de", "mail.com", "yandex.com", "qq.com", "163.com"
   ]);
   const IGNORED_EMAIL_DOMAINS = /(sentry|wixpress|shopify|example|domain\.com|email\.com|yourdomain|klaviyo|sentry-next)/i;
@@ -247,7 +296,7 @@
 
   const NUM = "\\d{1,3}(?:[\\s\\u00a0\\u202f.,]\\d{3})*(?:[.,]\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?";
   const PRICE_RE = new RegExp(
-    `(?:(?<![a-z])(?:kr|sek|nok|dkk|usd|eur|gbp)\\.?\\s?|[$€£]\\s?)(${NUM})|(${NUM})\\s?(?:kr\\b|sek\\b|nok\\b|dkk\\b|usd\\b|eur\\b|gbp\\b|:-|[$€£])`,
+    `(?:(?<![a-z])(?:kr|sek|nok|dkk|usd|eur|gbp)\\.?\\s?|[$€£]\\s?)(${NUM})|(${NUM})\\s?(?:kr\\b|sek\\b|nok\\b|dkk\\b|usd\\b|eur\\b|gbp\\b|:-|,-|[$€£])`,
     "gi");
 
   function toNumber(raw) {
@@ -274,12 +323,12 @@
   }
 
   globalThis.DropCheckDetectors = {
-    APP_SIGNATURES, DS_THEMES, LOCAL_SE_PAYMENTS,
+    APP_SIGNATURES, DS_THEMES,
     detectPlatform, detectApps, detectTheme, detectPaymentMethods, countSupplierImageIds,
     registrableDomain, tldInfo,
     detectCountdownText, detectStockUrgency, detectViewerCount,
     extractShippingQuotes,
-    findCompanyIds, detectAddress, extractEmails, isFreemail, detectBoilerplate,
+    findCompanyIds, detectAddress, detectMarket, extractEmails, isFreemail, detectBoilerplate,
     parsePrices, toNumber, discountOff
   };
 })();

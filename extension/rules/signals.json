@@ -23,6 +23,7 @@
     { "id": "ds_theme",         "category": "supply",   "weight": 10,
       "text": "Uses the {detail} theme, which is marketed almost only to dropshippers." }
   ],
+  "marketOverrides": {},
   "categoryCaps": { "supply": 50, "identity": 35, "pressure": 20, "pricing": 20 },
   "bands": { "likely": 60, "mixed": 30 }
 }

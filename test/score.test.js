@@ -13,7 +13,7 @@ function store(overrides = {}) {
     apps: [],
     theme: { name: "Dawn", dsTheme: null },
     tld: { tld: "se", cheap: false },
-    presentsSwedish: true,
+    market: { id: "se", name: "Swedish", reason: ".se domain" },
     urgency: { countdown: false, stock: false, viewers: false },
     discount: { source: "catalog", sampled: 20, offs: Array(20).fill(0) },
     shipping: { quotes: [{ min: 1, max: 3 }], fastestMax: 3 },
@@ -84,6 +84,25 @@ test("a single domestic delivery quote keeps long_shipping off", () => {
     shipping: { quotes: [{ min: 1, max: 3 }, { min: 10, max: 20 }], fastestMax: 3 }
   }), rules);
   assert.ok(!v.fired.some(f => f.id === "long_shipping"));
+});
+
+test("a Norwegian store without Vipps, Klarna or invoice gets a context note", () => {
+  const v = scoreSignals(store({
+    host: "example.no",
+    market: { id: "no", name: "Norwegian", reason: ".no domain" },
+    paymentMethods: ["visa", "paypal"]
+  }), rules);
+  assert.ok(v.context.some(n => n.includes("Norwegian but shows no Vipps, Klarna or invoice")));
+  assert.equal(v.score, 0);
+});
+
+test("market overrides change a rule for that market only", () => {
+  const config = { ...rules, marketOverrides: { no: { no_org_number: { weight: 0 } } } };
+  const noId = { identity: { ...store().identity, hasCompanyId: false, orgNumbers: [] } };
+  const norway = scoreSignals(store({ ...noId, market: { id: "no", name: "Norwegian", reason: "" } }), config);
+  const sweden = scoreSignals(store(noId), config);
+  assert.ok(!norway.fired.some(f => f.id === "no_org_number"));
+  assert.ok(sweden.fired.some(f => f.id === "no_org_number"));
 });
 
 test("unknown domain age never fires domain_young", () => {

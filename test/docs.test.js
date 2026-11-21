@@ -37,7 +37,7 @@ test("the version is the same everywhere it is written", () => {
       found[`${page} softwareVersion #${i + 1}`] = m[1];
     }
   }
-  for (const form of ["false-alarm.yml", "missed-reseller.yml"]) {
+  for (const form of ["false-alarm.yml", "missed-dropshipper.yml"]) {
     found[`.github/ISSUE_TEMPLATE/${form}`] =
       read(`.github/ISSUE_TEMPLATE/${form}`).match(/placeholder: "(\d+\.\d+\.\d+)"/)?.[1];
   }

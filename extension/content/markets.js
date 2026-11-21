@@ -150,7 +150,6 @@
       phoneCode: "46",
       neighbourPhoneCodes: ["45", "47", "354", "358"],   // DK, NO, IS, FI
       localPayments: ["klarna", "swish", "invoice", "svea", "qliro", "walley", "trustly"],
-      localPaymentLabel: "Klarna, Swish or invoice",
       orgNumber: {
         re: /\b(\d{6}-\d{4})\b/g,
         valid: n => luhnValid(n.replace(/\D/g, ""))
@@ -169,7 +168,6 @@
       phoneCode: "47",
       neighbourPhoneCodes: ["45", "46", "354", "358"],   // DK, SE, IS, FI
       localPayments: ["vipps", "klarna", "invoice", "walley", "svea"],
-      localPaymentLabel: "Vipps, Klarna or invoice",
       // A bare 9-digit number is too common to trust, so require the keyword or the
       // "NO ... MVA" VAT form, and the check digit.
       orgNumber: {

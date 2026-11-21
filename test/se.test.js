@@ -43,9 +43,9 @@ test("Swedish return address abroad and international warehouse", () => {
   const policy = "Returadress\nSkicka din retur till:\nUnit 1, Example Road 8, Example District\nKina\n" +
     "Vår registrerade företagsadress är ingen returadress.";
   assert.deepEqual(D.detectReturnsAbroad(policy), [
-    "return address in Kina", 'the company address is "not a return address"']);
+    "place:Kina", "notReturnAddress"]);
   assert.deepEqual(D.detectReturnsAbroad("Returer måste skickas till vårt internationella lager."),
-    ['returns go to an "internationella lager"']);
+    ["warehouse:internationella lager"]);
 });
 
 test("a Swedish return address at home is not flagged", () => {

@@ -2,7 +2,9 @@
 import "../shared/config.js";
 import "../content/markets.js";
 import "../content/detectors.js";
-import { BAND_LABELS, hasRegistrationDate, scoreSignals } from "./score.js";
+import { hasRegistrationDate, scoreSignals } from "./score.js";
+import { bandLabel } from "../i18n/format.js";
+import { LANGUAGE_KEY, getLanguage } from "../i18n/language.js";
 import { sanitizeSignals } from "./sanitize.js";
 
 const D = globalThis.DropCheckDetectors;
@@ -138,9 +140,24 @@ function setBadge(tabId, band) {
   const badge = BADGES[band];
   const ignore = () => {};
   chrome.action.setBadgeText({ tabId, text: badge ? badge[0] : "" }).catch(ignore);
-  chrome.action.setTitle({ tabId, title: badge ? `DropCheck: ${BAND_LABELS[band]}` : "DropCheck" }).catch(ignore);
   if (badge) chrome.action.setBadgeBackgroundColor({ tabId, color: badge[1] }).catch(ignore);
+  if (!badge) chrome.action.setTitle({ tabId, title: "DropCheck" }).catch(ignore);
+  else {
+    getLanguage()
+      .then(lang => chrome.action.setTitle({ tabId, title: `DropCheck: ${bandLabel(band, lang)}` }))
+      .catch(ignore);
+  }
 }
+
+// A new language in the popup retitles the badges of tabs already checked.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes[LANGUAGE_KEY]) return;
+  chrome.storage.session.get(null).then((/** @type {Record<string, any>} */ all) => {
+    for (const [key, entry] of Object.entries(all)) {
+      if (key.startsWith("tab:")) setBadge(Number(key.slice(4)), entry?.verdict?.band);
+    }
+  }).catch(logError("retitle badges"));
+});
 
 async function getVerdict(tabId) {
   const key = `tab:${tabId}`;

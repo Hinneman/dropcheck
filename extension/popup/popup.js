@@ -1,17 +1,16 @@
 import "../shared/config.js";
-import { BAND_LABELS, NO_REGISTRATION_DATE_TLDS, formatTldList } from "../background/score.js";
+import { NO_REGISTRATION_DATE_TLDS, formatTldList } from "../background/score.js";
+import { LANGUAGE_NAMES, bandLabel, noteText, ruleText, ui } from "../i18n/format.js";
+import { getLanguage, setLanguage } from "../i18n/language.js";
 
 const $ = id => document.getElementById(id);
 
-const BAND_NOTES = {
-  likely: "Several independent signals point to third-party fulfilment: expect a markup over the supplier price and longer delivery than a local shop.",
-  mixed: "Some signals are present, but they do not settle it.",
-  none: "Nothing detected. That is not a guarantee of anything.",
-  not_store: "This page does not look like an online store, so nothing was scored."
-};
-
-const CAVEAT = "Why this might be wrong: small shops that print on demand, make to order or " +
-  "import their own designs can show the same signals as a reseller.";
+// What is on screen, kept so a language change can redraw it.
+let lang = "en";
+/** @type {(t: ReturnType<typeof ui>) => string} */
+let status = t => t.scanning;
+let entry = null;
+let imagesShown = false;
 
 function li(text, extra) {
   const el = document.createElement("li");
@@ -25,16 +24,22 @@ function li(text, extra) {
   return el;
 }
 
-const CATEGORY_LABELS = {
-  supply: "Supply",
-  identity: "Identity",
-  pressure: "Sales pressure",
-  pricing: "Pricing"
-};
+// The fixed texts: everything marked data-i18n, plus the footer and labels.
+function applyStatic() {
+  const t = ui(lang);
+  document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll("[data-i18n]")) {
+    el.textContent = t[/** @type {HTMLElement} */ (el).dataset.i18n];
+  }
+  $("settings").setAttribute("aria-label", t.settings);
+  $("footer").textContent = t.footer(formatTldList(NO_REGISTRATION_DATE_TLDS, t.and));
+  $("status").textContent = status(t);
+}
 
 // One group per category: a header with the points that count (and the cap when it
 // applied), then each fired rule with its own weight.
 function firedByCategory(verdict) {
+  const t = ui(lang);
   const order = [...new Set(verdict.fired.map(f => f.category))];
   return order.map(cat => {
     const { raw, counted } = verdict.categories[cat];
@@ -44,60 +49,68 @@ function firedByCategory(verdict) {
     const head = document.createElement("div");
     head.className = "category-head";
     const name = document.createElement("span");
-    name.textContent = CATEGORY_LABELS[cat] || cat;
+    name.textContent = t.categories[cat] || cat;
     const total = document.createElement("span");
     total.className = "points";
-    total.textContent = raw > counted ? `${raw}, capped to ${counted}` : `+${counted}`;
+    total.textContent = raw > counted ? t.capped(raw, counted) : `+${counted}`;
     head.append(name, total);
 
     // A lone rule's weight would just repeat the header total, so it is left off.
     const inCategory = verdict.fired.filter(f => f.category === cat);
     const rules = document.createElement("ul");
     rules.replaceChildren(...inCategory.map(f =>
-      li(f.text, inCategory.length > 1 ? `+${f.weight}` : null)));
+      li(ruleText(f, lang), inCategory.length > 1 ? `+${f.weight}` : null)));
 
     group.append(head, rules);
     return group;
   });
 }
 
-function render(entry) {
+function render() {
   const { verdict, signals } = entry;
+  const t = ui(lang);
+  const band = bandLabel(verdict.band, lang);
   // The status stays in the page, visually hidden, so screen readers announce the result.
-  $("status").textContent = `Result: ${BAND_LABELS[verdict.band]}.`;
+  setStatus(tt => tt.result(bandLabel(verdict.band, lang)));
   $("status").classList.add("visually-hidden");
   $("result").hidden = false;
 
   $("verdict").dataset.band = verdict.band;
-  $("band").textContent = BAND_LABELS[verdict.band];
+  $("band").textContent = band;
   $("score").textContent = verdict.band === "not_store"
-    ? BAND_NOTES.not_store
-    : `Score ${verdict.score} of ${verdict.maxScore}. ${BAND_NOTES[verdict.band]}`;
+    ? t.bandNotes.not_store
+    : `${t.score(verdict.score, verdict.maxScore)} ${t.bandNotes[verdict.band]}`;
   $("caveat").hidden = verdict.band !== "mixed";
-  $("caveat").textContent = CAVEAT;
+  $("caveat").textContent = t.caveat;
 
   $("fired-section").hidden = verdict.fired.length === 0;
   $("fired").replaceChildren(...firedByCategory(verdict));
 
   $("context-section").hidden = verdict.context.length === 0;
-  $("context").replaceChildren(...verdict.context.map(t => li(t)));
+  $("context").replaceChildren(...verdict.context.map(n => li(noteText(n, lang))));
 
-  // Loaded on request only: the store's image server would otherwise see every popup open.
-  const images = signals.productImages || [];
-  $("images-section").hidden = images.length === 0;
+  $("images-section").hidden = (signals.productImages || []).length === 0;
+  if (imagesShown) showImages();
+}
+
+// Loaded on request only: the store's image server would otherwise see every popup open.
+function setupImages() {
   $("show-images").addEventListener("click", () => {
     $("show-images").hidden = true;
     $("images").hidden = false;
-    showImages(images);
+    imagesShown = true;
+    showImages();
   }, { once: true });
 }
 
-function showImages(images) {
+function showImages() {
+  const t = ui(lang);
+  const images = entry.signals.productImages || [];
   $("images").replaceChildren(...images.map((url, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.title = "Search this image with Google Lens";
-    btn.setAttribute("aria-label", `Search product image ${i + 1} of ${images.length} with Google Lens`);
+    btn.title = t.lensTitle;
+    btn.setAttribute("aria-label", t.lensLabel(i + 1, images.length));
     const img = document.createElement("img");
     img.src = url;
     img.alt = "";
@@ -107,6 +120,26 @@ function showImages(images) {
     }));
     return btn;
   }));
+}
+
+function setStatus(fn) {
+  status = fn;
+  $("status").textContent = fn(ui(lang));
+}
+
+function setupLanguage() {
+  const select = /** @type {HTMLSelectElement} */ ($("language"));
+  select.replaceChildren(...Object.entries(LANGUAGE_NAMES).map(([code, name]) => {
+    const option = new Option(name, code, false, code === lang);
+    option.lang = code;
+    return option;
+  }));
+  select.addEventListener("change", () => {
+    lang = select.value;
+    setLanguage(lang).catch(err => console.error("DropCheck language setting:", err));
+    applyStatic();
+    if (entry) render();
+  });
 }
 
 // Only toggles the permission; the worker reacts to it. The permission dialog can close
@@ -125,7 +158,10 @@ async function setupAutoScan() {
 }
 
 async function main() {
-  $("no-lookup-tlds").textContent = formatTldList(NO_REGISTRATION_DATE_TLDS);
+  lang = await getLanguage();
+  applyStatic();
+  setupLanguage();
+  setupImages();
   setupAutoScan().catch(err => console.error("DropCheck auto-scan setting:", err));
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   let host = "";
@@ -133,17 +169,16 @@ async function main() {
   $("host").textContent = host;
 
   if (!tab?.url?.startsWith("https://")) {
-    $("status").textContent = "DropCheck only reads https:// pages.";
+    setStatus(t => t.httpsOnly);
     return;
   }
   const res = await chrome.runtime.sendMessage({ type: "GET_VERDICT", tabId: tab.id });
   if (!res || res.error) {
-    $("status").textContent = res?.error === "timeout"
-      ? "The scan did not finish. Reload the page and try again."
-      : "DropCheck cannot read this page.";
+    setStatus(res?.error === "timeout" ? t => t.timeout : t => t.cannotRead);
     return;
   }
-  render(res);
+  entry = res;
+  render();
 }
 
-main().catch(err => { $("status").textContent = `Something went wrong: ${err.message}`; });
+main().catch(err => setStatus(t => t.error(err.message)));

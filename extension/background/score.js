@@ -10,15 +10,6 @@ const { MARKETS } = globalThis.DropCheckMarkets;
 const appsOfRole = (ids, role) =>
   (ids || []).filter(id => Object.hasOwn(D.APPS, id) && D.APPS[id].role === role).map(id => D.APPS[id].label);
 
-export const BAND_LABELS = {
-  likely: "Likely reseller",
-  mixed: "Mixed signals",
-  none: "No reseller signals found",
-  not_store: "No shop detected"
-};
-
-const pct = x => `${Math.round(x * 100)} %`;
-
 // Registries without a usable registration date. .se, .dk and .de publish none over
 // HTTPS (WHOIS only). .no publishes one, but Norid registers the domain anew when it
 // changes holder, so a shop that has traded for decades can show a date from last month.
@@ -38,79 +29,65 @@ export function formatTldList(tlds, and = "and") {
 // The shop's own registrable domain: the looked-up one, else derived from the host.
 const ownDomain = s => s.domain?.name || D.registrableDomain(s.host || "");
 
-function formatAge(days) {
-  if (days < 60) return `${days} days ago`;
-  return `about ${Math.round(days / 30)} months ago`;
-}
+// The catalog reader stops after this many products (collect.js).
+const CATALOG_PAGE = 250;
 
-// Each test returns a detail string when the rule fires, or null when it does not.
+// Each test returns the parameters its text needs when the rule fires, or null when it
+// does not. The text itself lives in i18n/<language>.js under the rule's id.
 const TESTS = {
   dropship_app(s) {
-    const hits = appsOfRole(s.apps, "supply");
-    return hits.length ? hits.join(", ") : null;
+    const apps = appsOfRole(s.apps, "supply");
+    return apps.length ? { apps } : null;
   },
   // Image file names and import-app product tags both point at a marketplace listing.
   supplier_images(s, p) {
     const images = s.supplierImageIds || 0, tags = s.supplierTagIds || 0;
-    if (images + tags < (p.min ?? 2)) return null;
-    const parts = [];
-    if (images) parts.push(images === 1 ? "1 product image keeps an AliExpress, Alibaba or Amazon file name"
-      : `${images} product images keep AliExpress, Alibaba or Amazon file names`);
-    if (tags) parts.push(tags === 1 ? "1 product carries an Amazon product ID tag"
-      : `${tags} products carry an Amazon product ID tag`);
-    return parts.join("; ");
+    return images + tags >= (p.min ?? 2) ? { images, tags } : null;
   },
   ai_images(s, p) {
-    return (s.aiImages || 0) >= (p.min ?? 2) ? String(s.aiImages) : null;
+    return (s.aiImages || 0) >= (p.min ?? 2) ? { count: s.aiImages } : null;
   },
   returns_abroad(s) {
-    return s.returnsAbroad?.length ? s.returnsAbroad.join("; ") : null;
+    return s.returnsAbroad?.length ? { found: s.returnsAbroad } : null;
   },
   import_charges(s) {
-    return s.importCharge || null;
+    return s.importCharge ? { quote: s.importCharge } : null;
   },
   // A weak stand-in for domain age, which .se, .dk, .de and .no registries do not give.
   // A shop that moved to Shopify or re-imported its catalog also looks new.
   catalog_young(s, p) {
     const days = s.catalog?.oldestProductDays;
     if (days == null || days >= p.maxAgeDays) return null;
-    const capped = s.catalog.productCount >= 250 ? " (of the first 250 checked)" : "";
-    return `${formatAge(days)}${capped}`;
+    return { days, checkedFirst: s.catalog.productCount >= CATALOG_PAGE ? CATALOG_PAGE : null };
   },
   domain_young(s, p) {
-    const age = s.domain?.ageDays;
-    return age != null && age < p.maxAgeDays ? formatAge(age) : null;
+    const days = s.domain?.ageDays;
+    return days != null && days < p.maxAgeDays ? { days } : null;
   },
   no_org_number(s) {
-    return s.identity && !s.identity.hasCompanyId ? "" : null;
+    return s.identity && !s.identity.hasCompanyId ? {} : null;
   },
   long_shipping(s, p) {
     const sh = s.shipping;
     if (!sh || sh.fastestMax == null || sh.fastestMax < p.minDays) return null;
     const q = sh.quotes.find(x => x.max === sh.fastestMax) || { min: sh.fastestMax, max: sh.fastestMax };
-    return q.min === q.max ? `${q.max} days` : `${q.min}-${q.max} days`;
+    return { min: q.min, max: q.max };
   },
   fake_urgency(s) {
     const u = s.urgency || {};
-    const found = [
-      u.countdown && "countdown timer",
-      u.stock && '"only N left" stock counter',
-      u.viewers && '"N people viewing" counter'
-    ].filter(Boolean);
-    return found.length ? found.join(", ") : null;
+    const widgets = ["countdown", "stock", "viewers"].filter(w => u[w]);
+    return widgets.length ? { widgets } : null;
   },
   blanket_discount(s, p) {
     const d = s.discount;
     if (!d || d.sampled < p.minSampled) return null;
     const deep = d.offs.filter(o => o >= p.deepOff).length;
-    const share = deep / d.sampled;
-    if (share < p.minDeepShare) return null;
-    const where = d.source === "catalog" ? "products in the catalog" : "products on this page";
-    return `${deep} of ${d.sampled} ${where} are marked down ${pct(p.deepOff)} or more from a struck-through "regular" price.`;
+    if (deep / d.sampled < p.minDeepShare) return null;
+    return { deep, sampled: d.sampled, source: d.source, deepOff: p.deepOff };
   },
   boilerplate(s) {
-    const b = s.identity?.boilerplate || [];
-    return b.length ? b.join(", ") : null;
+    const phrases = s.identity?.boilerplate || [];
+    return phrases.length ? { phrases } : null;
   },
   // Only when every phone number found is foreign: a shop may list a support line
   // abroad next to its domestic number. A neighbouring country's code does not count:
@@ -121,7 +98,7 @@ const TESTS = {
     const codes = s.identity?.phoneCodes || [];
     if (!market?.phoneCode || !codes.length || codes.includes(market.phoneCode)) return null;
     if (codes.every(c => (market.neighbourPhoneCodes || []).includes(c))) return null;
-    return codes.map(c => `+${c}` + (D.phoneCountry(c) ? ` (${D.phoneCountry(c)})` : "")).join(", ");
+    return { phones: codes.map(code => ({ code, regions: D.phoneRegions(code) })) };
   },
   // An address at another brand's domain, even next to the shop's own: policy pages
   // copied from another store, or one operator running several shops.
@@ -130,7 +107,7 @@ const TESTS = {
     const others = [...new Set((s.identity?.emails || []).map(e => D.registrableDomain(e.split("@")[1])))]
       .filter(d => !D.isFreemail(d) && !D.isServiceEmailDomain(d) &&
                    !D.sameBrand(d, own) && !D.sameBrand(d, s.host || own));
-    return others.length ? others.join(", ") : null;
+    return others.length ? { domains: others } : null;
   },
   generic_email(s) {
     const emails = s.identity?.emails || [];
@@ -138,44 +115,45 @@ const TESTS = {
     const domains = emails.map(e => e.split("@")[1]);
     if (domains.some(d => d === own || d.endsWith("." + own))) return null;
     const free = domains.filter(d => D.isFreemail(d));
-    return free.length ? [...new Set(free)].join(", ") : null;
+    return free.length ? { domains: [...new Set(free)] } : null;
   },
   ds_theme(s) {
     const t = s.theme;
-    return t?.dsTheme ? (t.name || t.dsTheme) : null;
+    return t?.dsTheme ? { theme: t.name || t.dsTheme } : null;
   }
 };
 
-// Observations shown in the popup that carry no points.
+// Observations shown in the popup that carry no points, as { key, params }. The text
+// lives in i18n/<language>.js under notes.<key>.
 function contextNotes(s) {
   const notes = [];
-  if (s.platform) notes.push(`Platform: ${s.platform}. Platform alone is not evidence and scores nothing.`);
+  const note = (key, params = {}) => notes.push({ key, params });
+  if (s.platform) note("platform", { platform: s.platform });
   const ctxApps = appsOfRole(s.apps, "context");
-  if (ctxApps.length) notes.push(`Also loads: ${ctxApps.join(", ")}.`);
-  if (s.theme?.name && !s.theme.dsTheme) notes.push(`Theme: ${s.theme.name}.`);
+  if (ctxApps.length) note("contextApps", { apps: ctxApps });
+  if (s.theme?.name && !s.theme.dsTheme) note("theme", { theme: s.theme.name });
   if (s.domain) {
-    if (s.domain.ageDays != null) notes.push(`Domain ${s.domain.name} registered ${s.domain.createdAt.slice(0, 10)}.`);
-    else if (!hasRegistrationDate(s.domain.name)) {
-      notes.push(`Domain age is not checked for .${tldOf(s.domain.name)} domains: the registry ` +
-        "publishes no date that shows how long the shop has used the domain. This is neither a good nor a bad sign.");
-    } else notes.push(`Domain age for ${s.domain.name} is unknown (registry lookup unavailable).`);
+    const domain = s.domain.name;
+    if (s.domain.ageDays != null) note("domainRegistered", { domain, date: s.domain.createdAt.slice(0, 10) });
+    else if (!hasRegistrationDate(domain)) note("domainAgeNotChecked", { tld: tldOf(domain) });
+    else note("domainAgeUnknown", { domain });
   }
-  if (s.tld?.cheap) notes.push(`Uses the .${s.tld.tld} top-level domain.`);
+  if (s.tld?.cheap) note("cheapTld", { tld: s.tld.tld });
   const market = s.market && MARKETS[s.market.id];
-  if (market) notes.push(`Market: ${market.name} (from the ${s.market.reason}).`);
+  if (market) note("market", { market: s.market.id, reason: s.market.reason });
   const pm = s.paymentMethods || [];
-  if (pm.length) notes.push(`Payment logos: ${pm.join(", ")}.`);
+  if (pm.length) note("paymentLogos", { methods: pm });
   if (market && pm.length && !pm.some(m => market.localPayments.includes(m))) {
-    notes.push(`Presents itself as ${market.name} but shows no ${market.localPaymentLabel} option.`);
+    note("noLocalPayment", { market: s.market.id });
   }
   if (s.identity) {
-    if (s.identity.orgNumbers.length) notes.push(`Org. no. shown: ${s.identity.orgNumbers.join(", ")}.`);
-    if (!s.identity.hasAddress) notes.push("No postal address found.");
+    if (s.identity.orgNumbers.length) note("orgNumbers", { numbers: s.identity.orgNumbers });
+    if (!s.identity.hasAddress) note("noAddress");
   }
-  if (s.shipping && !s.shipping.quotes.length) notes.push("No delivery time stated on the pages read.");
+  if (s.shipping && !s.shipping.quotes.length) note("noDeliveryTime");
   if (s.catalog) {
-    notes.push(`Catalog: ${s.catalog.productCount} products in ${s.catalog.productTypes} product types` +
-      (s.catalog.typeSample.length ? ` (${s.catalog.typeSample.slice(0, 5).join(", ")})` : "") + ".");
+    note("catalog", { products: s.catalog.productCount, types: s.catalog.productTypes,
+                      sample: s.catalog.typeSample.slice(0, 5) });
   }
   return notes;
 }
@@ -195,15 +173,14 @@ export function scoreSignals(signals, config) {
     const rule = { ...ruleDef, ...overrides[ruleDef.id] };
     const test = TESTS[rule.id];
     if (!test || rule.weight <= 0) continue;
-    const detail = test(signals, rule.params || {});
-    if (detail === null) continue;
+    const params = test(signals, rule.params || {});
+    if (params === null) continue;
     candidates.push({
       corroborating: rule.params?.corroborating === true,
       id: rule.id,
       category: rule.category,
       weight: rule.weight,
-      // Function form: detail is page text and may contain "$&".
-      text: rule.text.replace("{detail}", () => detail)
+      params
     });
   }
   // A corroborating rule counts only when the other signs already reach the mixed band:

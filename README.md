@@ -4,7 +4,7 @@
 
 Chrome extension that flags dropshipping signals on Swedish and Norwegian online stores
 and explains each one. It reports observations about a page, not a judgment of the
-company.
+company. The extension comes in English, Swedish and Norwegian.
 
 <br clear="left">
 
@@ -42,8 +42,8 @@ single kind of evidence can decide the verdict on its own.
 - **Sales pressure:** countdown timers, "only N left" and "N people viewing" counters.
 - **Pricing:** most products marked down 50 % or more from a struck-through price.
 
-The verdict is *Likely reseller* (60 points or more), *Mixed signals* (30 or more) or
-*No reseller signals found*. The platform, print-on-demand and review apps, cheap
+The verdict is *Likely dropshipper* (60 points or more), *Mixed signals* (30 or more) or
+*No dropshipping signals found*. The platform, print-on-demand and review apps, cheap
 top-level domains, payment logos and the detected market are shown as context and
 score nothing.
 
@@ -64,14 +64,18 @@ extension/                 load this folder in Chrome
   background/sanitize.js   bounds the signal object a content script sends (pure)
   background/worker.js     service worker: domain age (RDAP), scoring, cache, badge
   rules/signals.json       weights, category caps, band thresholds
+  i18n/                    texts per language (en.js, sv.js, nb.js), the formatter that
+                           turns the scorer's rule ids and parameters into sentences, and
+                           the language setting
   popup/                   verdict, fired rules, context, "Find the source",
-                           automatic scanning setting
+                           automatic scanning and language settings
   icons/                   PNG icons rendered from assets/ (npm run icons)
+  _locales/                store name and description per language (en, sv, no)
 assets/icon.svg            icon source, rendered at every size
 scripts/render-icons.js    renders the PNG icons with Puppeteer
 scripts/sync-faq.js        rebuilds the site's FAQ structured data (npm run sync-faq)
-scripts/store-screenshots.js  renders the Chrome Web Store graphics from two fictional
-                           shops (npm run store-screenshots)
+scripts/store-screenshots.js  renders the Chrome Web Store graphics from fictional Swedish
+                           and Norwegian shops (npm run store-screenshots, -- --lang sv|nb)
 site/                      GitHub Pages site (en, sv/, no/, privacy.html), deployed by pages.yml
 store/                     Chrome Web Store listing texts and graphics
 eval/

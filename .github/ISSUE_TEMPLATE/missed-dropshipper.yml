@@ -1,7 +1,7 @@
-name: Missed reseller
-description: DropCheck did not flag a store that resells or dropships.
-title: "Missed reseller: "
-labels: ["missed reseller"]
+name: Missed dropshipper
+description: DropCheck did not flag a store that dropships.
+title: "Missed dropshipper: "
+labels: ["missed dropshipper"]
 body:
   - type: markdown
     attributes:
@@ -22,7 +22,7 @@ body:
     attributes:
       label: Verdict shown
       options:
-        - No reseller signals found
+        - No dropshipping signals found
         - Mixed signals
         - No shop detected
     validations:
@@ -38,7 +38,7 @@ body:
   - type: textarea
     id: evidence
     attributes:
-      label: Why you believe it resells or dropships
+      label: Why you believe it dropships
       description: >
         What gave it away? For example: the same product sold on AliExpress, Temu or Amazon,
         a return address abroad, long delivery times, a parcel shipped from outside the EU,

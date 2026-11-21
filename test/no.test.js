@@ -4,23 +4,23 @@ import assert from "node:assert/strict";
 import "../extension/content/markets.js";
 import "../extension/content/detectors.js";
 import { scoreSignals } from "../extension/background/score.js";
-import { rules, store } from "./helpers.js";
+import { firedText, notesText, rules, store } from "./helpers.js";
 
 const D = globalThis.DropCheckDetectors;
 
 test("Norwegian returns abroad and import charges", () => {
   assert.deepEqual(D.detectReturnsAbroad("Returer sendes til vårt internasjonale lager."),
-    ['returns go to an "internasjonale lager"']);
+    ["warehouse:internasjonale lager"]);
   assert.ok(D.detectImportCharges("Toll og importmva betales av kunden ved levering."));
   assert.equal(D.detectImportCharges("Ingen toll eller avgifter, vi sender fra Norge."), null);
   assert.equal(D.detectImportCharges("For bestillinger utenfor Norge kan toll tilkomme, som betales av kunden."), null);
 });
 
 test("a Norwegian store with only a foreign phone number fires foreign_phone", () => {
-  const no = { market: { id: "no", name: "Norwegian", reason: ".no domain" } };
+  const no = { market: { id: "no", name: "Norwegian", reason: { by: "tld", value: "no" } } };
   const identity = { ...store().identity, phoneCodes: ["44"] };
   const v = scoreSignals(store({ ...no, identity }), rules);
-  assert.ok(v.fired.find(f => f.id === "foreign_phone").text.includes("+44 (United Kingdom)"));
+  assert.ok(firedText(v, "foreign_phone").includes("+44 (United Kingdom)"));
   const both = { ...identity, phoneCodes: ["44", "47"] };
   assert.ok(!scoreSignals(store({ ...no, identity: both }), rules).fired.some(f => f.id === "foreign_phone"));
 });
@@ -66,9 +66,9 @@ test("detectMarket: domain, then language, then Shopify market, then currency", 
 test("a Norwegian store without Vipps, Klarna or invoice gets a context note", () => {
   const v = scoreSignals(store({
     host: "example.no",
-    market: { id: "no", name: "Norwegian", reason: ".no domain" },
+    market: { id: "no", name: "Norwegian", reason: { by: "tld", value: "no" } },
     paymentMethods: ["visa", "paypal"]
   }), rules);
-  assert.ok(v.context.some(n => n.includes("Norwegian but shows no Vipps, Klarna or invoice")));
+  assert.ok(notesText(v).some(n => n.includes("Norwegian but shows no Vipps, Klarna or invoice")));
   assert.equal(v.score, 0);
 });

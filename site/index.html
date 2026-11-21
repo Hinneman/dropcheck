@@ -33,6 +33,11 @@
       "description": "Chrome extension that shows signs that a Swedish or Norwegian web shop resells products from AliExpress, Temu or Amazon, and explains each sign.",
       "url": "https://hinneman.github.io/dropcheck/",
       "codeRepository": "https://github.com/Hinneman/dropcheck",
+      "inLanguage": [
+        "en",
+        "sv",
+        "nb"
+      ],
       "softwareVersion": "0.4.0"
     },
     {
@@ -115,7 +120,7 @@
           "name": "How do I report a dishonest shop?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Report misleading shops to Konsumentverket (Sweden) or Forbrukertilsynet (Norway). Reports help them see patterns, even when they cannot solve your own case. Konsumentverket also has an article on dropshipping. You can report the shop to DropCheck too, with the Missed reseller form."
+            "text": "Report misleading shops to Konsumentverket (Sweden) or Forbrukertilsynet (Norway). Reports help them see patterns, even when they cannot solve your own case. Konsumentverket also has an article on dropshipping. You can report the shop to DropCheck too, with the Missed dropshipper form."
           }
         },
         {
@@ -179,7 +184,7 @@
           "name": "DropCheck got a shop wrong. What can I do?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Please report it. Shops that DropCheck gets wrong are the most useful data for improving it. Use False alarm for an honest shop that was flagged, or Missed reseller for a reseller that was not."
+            "text": "Please report it. Shops that DropCheck gets wrong are the most useful data for improving it. Use False alarm for an honest shop that was flagged, or Missed dropshipper for a dropshipper that was not."
           }
         },
         {
@@ -292,7 +297,7 @@ in the previous answer is often the only way to get your money back.</p>
 help them see patterns, even when they cannot solve your own case. Konsumentverket also has an
 <a href="https://konsumentverket.se/en/articles/dropshipping-english">article on dropshipping</a>.
 You can report the shop to DropCheck too, with the
-<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-reseller.yml">Missed reseller</a> form.</p>
+<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-dropshipper.yml">Missed dropshipper</a> form.</p>
 </details>
 
 <details>
@@ -312,7 +317,7 @@ or anyone else: the analysis runs in your browser.</p>
 <p>Each sign scores points in one of four categories. Every category is capped, so no single
 kind of evidence can decide the verdict on its own: a young domain plus a missing org. number
 plus a free mailbox still only count once as weak identity. A shop needs evidence from more
-than one direction to be called a likely reseller.</p>
+than one direction to be called a likely dropshipper.</p>
 
 <div class="table-wrap">
 <table>
@@ -327,9 +332,9 @@ than one direction to be called a likely reseller.</p>
 </div>
 
 <ul class="bands">
-<li class="likely"><strong>Likely reseller</strong> - 60 points or more.</li>
+<li class="likely"><strong>Likely dropshipper</strong> - 60 points or more.</li>
 <li class="mixed"><strong>Mixed signals</strong> - 30 to 59 points. Worth a closer look.</li>
-<li class="none"><strong>No reseller signals found</strong> - under 30 points.</li>
+<li class="none"><strong>No dropshipping signals found</strong> - under 30 points.</li>
 </ul>
 
 <p>The platform a shop runs on, its review apps or payment logos never score: they are shown
@@ -391,8 +396,8 @@ Sweden and Norway; image, policy and pricing signs work for shops in any country
 <p>Please report it. Shops that DropCheck gets wrong are the most useful data for improving it.
 Use <a href="https://github.com/Hinneman/dropcheck/issues/new?template=false-alarm.yml">False alarm</a>
 for an honest shop that was flagged, or
-<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-reseller.yml">Missed reseller</a>
-for a reseller that was not.</p>
+<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-dropshipper.yml">Missed dropshipper</a>
+for a dropshipper that was not.</p>
 </details>
 
 <details>
@@ -405,7 +410,9 @@ and select the unzipped folder.</p>
 
 <footer>
 <p>DropCheck is open source: <a href="https://github.com/Hinneman/dropcheck">github.com/Hinneman/dropcheck</a>.
-It reports observations about web pages, not judgments of companies.</p>
+It reports observations about web pages, not judgments of companies. It comes in English,
+Swedish and Norwegian: it follows your browser's language, and you can switch at the bottom of
+the popup.</p>
 <p><a href="privacy.html">Privacy policy</a></p>
 </footer>
 </body>

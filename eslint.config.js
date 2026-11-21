@@ -34,6 +34,11 @@ export default [
     languageOptions: { globals: { ...globals.serviceworker, ...globals.webextensions } }
   },
   {
+    // The rest of i18n/ is pure and gets no browser globals.
+    files: ["extension/i18n/language.js"],
+    languageOptions: { globals: { ...globals.webextensions } }
+  },
+  {
     files: ["extension/popup/**/*.js"],
     languageOptions: { globals: { ...globals.browser, ...globals.webextensions } }
   },

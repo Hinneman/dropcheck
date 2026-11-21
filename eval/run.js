@@ -180,7 +180,7 @@ function summarise(results) {
     const sum = k => legitGroups.reduce((t, s) => t + s[k], 0);
     const likely = sum("likely");
     const scored = sum("n") - sum("error") - sum("not_store");
-    console.log(`\nFalse positive rate (legitimate stores in "Likely reseller"): ` +
+    console.log(`\nFalse positive rate (legitimate stores in "Likely dropshipper"): ` +
       `${likely}/${scored} = ${pctOf(likely, scored)}   target: under 10 %`);
   }
   // Pages that are not shops (news, agencies, encyclopedias): store recognition must

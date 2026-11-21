@@ -7,7 +7,7 @@
 (() => {
   const D = globalThis.DropCheckDetectors;
   const { DAY_MS, SITE_TTL_MS } = globalThis.DropCheckConfig;
-  const SITE_FACTS_VERSION = 4;   // bump when site-level detectors or page choice change
+  const SITE_FACTS_VERSION = 5;   // bump when site-level detectors or page choice change
   const FETCH_TIMEOUT_MS = 6000;
   const STORE_WAIT_MS = 8000;     // how long a late-rendering page gets to look like a store
   const STORE_POLL_MS = 1000;

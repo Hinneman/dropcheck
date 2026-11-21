@@ -89,11 +89,11 @@ test("countImportSourceTags counts import-source ID tags only", () => {
 
 test("returns abroad in English and German", () => {
   assert.deepEqual(D.detectReturnsAbroad("Approved returns must be sent to the following address: Unit 1, Example Road, Shenzhen, China."),
-    ["return address in Shenzhen"]);
+    ["place:Shenzhen"]);
   assert.deepEqual(D.detectReturnsAbroad("Bestätigte Rückgaben werden an folgende Adresse gesendet: Beispielstraße 1, Guangzhou, China"),
-    ["return address in Guangzhou"]);
+    ["place:Guangzhou"]);
   assert.deepEqual(D.detectReturnsAbroad("Returns are handled by our overseas warehouse."),
-    ['returns go to an "overseas warehouse"']);
+    ["warehouse:overseas warehouse"]);
 });
 
 test("import charges in English and German", () => {

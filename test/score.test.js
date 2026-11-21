@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { hasRegistrationDate, scoreSignals } from "../extension/background/score.js";
-import { rules, store } from "./helpers.js";
+import { firedText, notesText, rules, store } from "./helpers.js";
 
 test("a plain Shopify store scores zero", () => {
   const v = scoreSignals(store(), rules);
@@ -15,8 +15,7 @@ test("non-store pages are not scored", () => {
 
 test("page-derived detail is inserted literally, not as a replacement pattern", () => {
   const v = scoreSignals(store({ theme: { name: "Shrine $& $' x", dsTheme: "shrine" } }), rules);
-  const fired = v.fired.find(f => f.id === "ds_theme");
-  assert.ok(fired.text.includes("Shrine $& $' x"));
+  assert.ok(firedText(v, "ds_theme").includes("Shrine $& $' x"));
 });
 
 test("a typical dropshipper lands in likely", () => {
@@ -52,9 +51,8 @@ test("category caps stop stacking", () => {
 });
 
 test("Amazon product ID tags count as supplier evidence", () => {
-  const tagged = scoreSignals(store({ supplierTagIds: 40 }), rules).fired.find(f => f.id === "supplier_images");
-  assert.ok(tagged);
-  assert.ok(tagged.text.includes("40 products carry an Amazon product ID tag"));
+  const tagged = scoreSignals(store({ supplierTagIds: 40 }), rules);
+  assert.ok(firedText(tagged, "supplier_images").includes("40 products carry an Amazon product ID tag"));
   const mixed = scoreSignals(store({ supplierImageIds: 1, supplierTagIds: 1 }), rules);
   assert.ok(mixed.fired.some(f => f.id === "supplier_images"), "one image and one tag reach the minimum of 2");
   const one = scoreSignals(store({ supplierTagIds: 1 }), rules);
@@ -64,16 +62,16 @@ test("Amazon product ID tags count as supplier evidence", () => {
 test("AI generator file names fire from two images", () => {
   assert.ok(!scoreSignals(store({ aiImages: 1 }), rules).fired.some(f => f.id === "ai_images"));
   const v = scoreSignals(store({ aiImages: 3 }), rules);
-  assert.ok(v.fired.find(f => f.id === "ai_images").text.startsWith("3 product images"));
+  assert.ok(firedText(v, "ai_images").startsWith("3 product images"));
 });
 
 test("returns abroad and import charges fire with the page wording", () => {
   const v = scoreSignals(store({
-    returnsAbroad: ["return address in Kina"],
+    returnsAbroad: ["place:Kina"],
     importCharge: "Importmoms debiteras dig."
   }), rules);
-  assert.ok(v.fired.find(f => f.id === "returns_abroad").text.includes("return address in Kina"));
-  assert.ok(v.fired.find(f => f.id === "import_charges").text.includes('"Importmoms debiteras dig."'));
+  assert.ok(firedText(v, "returns_abroad").includes("return address in Kina"));
+  assert.ok(firedText(v, "import_charges").includes('"Importmoms debiteras dig."'));
 });
 
 test("a Swedish store with a Swedish number does not fire foreign_phone", () => {
@@ -109,8 +107,11 @@ test("no_org_number counts only when the other signs already reach mixed", () =>
 
 test("catalog_young fires on a new catalog and says when the first page was capped", () => {
   const catalog = { productCount: 250, productTypes: 1, typeSample: [], vendors: [], oldestProductDays: 40 };
-  const fired = scoreSignals(store({ catalog }), rules).fired.find(f => f.id === "catalog_young");
-  assert.ok(fired.text.includes("40 days ago (of the first 250 checked)"));
+  assert.ok(firedText(scoreSignals(store({ catalog }), rules), "catalog_young")
+    .includes("40 days ago (of the first 250 checked)"));
+  const small = { ...catalog, productCount: 12 };
+  assert.equal(firedText(scoreSignals(store({ catalog: small }), rules), "catalog_young"),
+    "The oldest product in the catalog was added 40 days ago.");
   const old = { ...catalog, oldestProductDays: 900 };
   assert.ok(!scoreSignals(store({ catalog: old }), rules).fired.some(f => f.id === "catalog_young"));
 });
@@ -118,9 +119,8 @@ test("catalog_young fires on a new catalog and says when the first page was capp
 test("other_domain_email fires on another brand's address, even next to the shop's own", () => {
   const withEmails = emails => store({ identity: { ...store().identity, emails } });
   // ".example" is a reserved top-level domain, so "otherbrand.example" is fictional too.
-  const fired = scoreSignals(withEmails(["info@otherbrand.example"]), rules).fired
-    .find(f => f.id === "other_domain_email");
-  assert.ok(fired.text.includes("otherbrand.example"));
+  assert.ok(firedText(scoreSignals(withEmails(["info@otherbrand.example"]), rules), "other_domain_email")
+    .includes("otherbrand.example"));
   assert.ok(scoreSignals(withEmails(["hej@example.se", "info@otherbrand.example"]), rules).fired
     .some(f => f.id === "other_domain_email"));
   for (const emails of [["hej@example.se", "order@example.com"], ["hej@example-shop.com"],
@@ -133,7 +133,7 @@ test("other_domain_email fires on another brand's address, even next to the shop
 test("Printful alone is context, not a signal", () => {
   const v = scoreSignals(store({ apps: ["printful"] }), rules);
   assert.equal(v.score, 0);
-  assert.ok(v.context.some(n => n.includes("Printful")));
+  assert.ok(notesText(v).some(n => n.includes("Printful")));
 });
 
 test("a free mailbox does not fire when the shop also uses its own domain", () => {
@@ -152,7 +152,7 @@ test("market overrides change a rule for that market only", () => {
   const config = { ...rules, marketOverrides: { no: { no_org_number: { weight: 0 } } } };
   // Supplier images as well: no_org_number counts only once other signs reach "mixed".
   const noId = { identity: { ...store().identity, hasCompanyId: false, orgNumbers: [] }, supplierImageIds: 5 };
-  const norway = scoreSignals(store({ ...noId, market: { id: "no", name: "Norwegian", reason: "" } }), config);
+  const norway = scoreSignals(store({ ...noId, market: { id: "no", name: "Norwegian", reason: { by: "tld", value: "no" } } }), config);
   const sweden = scoreSignals(store(noId), config);
   assert.ok(!norway.fired.some(f => f.id === "no_org_number"));
   assert.ok(sweden.fired.some(f => f.id === "no_org_number"));
@@ -161,7 +161,7 @@ test("market overrides change a rule for that market only", () => {
 test("unknown domain age never fires domain_young", () => {
   const v = scoreSignals(store({ domain: { name: "example.com", createdAt: null, ageDays: null } }), rules);
   assert.ok(!v.fired.some(f => f.id === "domain_young"));
-  assert.ok(v.context.some(n => n.includes("unknown")));
+  assert.ok(notesText(v).some(n => n.includes("unknown")));
 });
 
 test("only domains whose registry publishes a date are looked up", () => {
@@ -174,7 +174,7 @@ test("domains whose registry publishes no date say so instead of 'unknown'", () 
   for (const name of ["example.se", "example.dk", "example.de", "example.no"]) {
     const v = scoreSignals(store({ domain: { name, createdAt: null, ageDays: null } }), rules);
     assert.ok(!v.fired.some(f => f.id === "domain_young"));
-    assert.ok(v.context.some(n => n.includes("not checked")), name);
-    assert.ok(!v.context.some(n => n.includes("unknown")), name);
+    assert.ok(notesText(v).some(n => n.includes("not checked")), name);
+    assert.ok(!notesText(v).some(n => n.includes("unknown")), name);
   }
 });

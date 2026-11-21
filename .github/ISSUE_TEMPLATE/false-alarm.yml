@@ -1,5 +1,5 @@
 name: False alarm
-description: DropCheck flagged a store that is not a reseller or dropshipper.
+description: DropCheck flagged a store that is not a dropshipper.
 title: "False alarm: "
 labels: ["false alarm"]
 body:
@@ -22,7 +22,7 @@ body:
     attributes:
       label: Verdict shown
       options:
-        - Likely reseller
+        - Likely dropshipper
         - Mixed signals
     validations:
       required: true

@@ -1,30 +1,37 @@
 // Renders the Chrome Web Store graphics into store/screenshots/:
-//   screenshot-reseller.png, screenshot-honest.png (1280x800), promo-small.png (440x280)
+//   screenshot-dropshipper.png, screenshot-honest.png (1280x800), promo-small.png (440x280)
 //
-//   npm run store-screenshots
+//   npm run store-screenshots                   English, Swedish shops
+//   npm run store-screenshots -- --lang sv      Swedish, into store/screenshots/sv/
+//   npm run store-screenshots -- --lang nb      Norwegian shops, into store/screenshots/nb/
 //
-// Both shops are fictional and live only inside this script: every request to
-// www.example.se and keramik.example.se (and the Shopify CDN) is answered here, so no real
-// shop is contacted or shown. The extension runs from a temporary copy with automatic
+// The shops are fictional and live only inside this script: every request to
+// www.example.se, keramik.example.se, www.example.no and keramikk.example.no (and the
+// Shopify CDN) is answered here, so no real shop is contacted or shown. The extension runs from a temporary copy with automatic
 // scanning granted, as in eval/run.js, and the popup is opened with chrome.action.openPopup().
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
+import { LANGUAGE_NAMES, isLanguage } from "../extension/i18n/format.js";
+import { LANGUAGE_KEY } from "../extension/i18n/language.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = path.join(ROOT, "store", "screenshots");
+const langArg = process.argv.indexOf("--lang");
+const LANG = langArg >= 0 ? process.argv[langArg + 1] : null;
+if (LANG !== null && !isLanguage(LANG)) {
+  console.error(`--lang must be one of: ${Object.keys(LANGUAGE_NAMES).join(", ")}`);
+  process.exit(1);
+}
+const OUT = path.join(ROOT, "store", "screenshots", ...(LANG ? [LANG] : []));
 const DAY = 86400000;
 const iso = daysAgo => new Date(Date.now() - daysAgo * DAY).toISOString();
 
 // ---------- Fictional shops ----------
 
-const RESELLER_PRODUCTS = [
-  "Stickad kofta Elsa", "Ullkappa Maja", "Vadderad jacka Ingrid", "Klänning Sofia", "Boots Freja",
-  "Polotröja Karin", "Väst Astrid", "Kappa Linnea", "Sneakers Ebba", "Blus Wilma",
-  "Hoodie Alva", "Jacka Selma"
-].map((title, i) => ({
+// A young catalog of copied products, all marked down from 999 to 299.
+const dropshipperProducts = (titles, [firstType, restType]) => titles.map((title, i) => ({
   title,
   // Supplier and AI file names of the kinds DropCheck recognises; the IDs are made up.
   images: [
@@ -32,22 +39,39 @@ const RESELLER_PRODUCTS = [
     `S${(i + 10).toString(16).padStart(2, "0")}d1c2e3f4a5b6c7d8e9f0a1b2c3d4e5fg.jpg`,
     `ChatGPT_Image_${i + 1}_okt_2026_12_00_00.png`
   ],
-  type: i < 6 ? "Ytterkläder" : "Stickat",
+  type: i < 6 ? firstType : restType,
   created: iso(20 + i * 3),
   price: "299.00",
   compare: "999.00"
 }));
 
-const HONEST_PRODUCTS = [
-  "Mugg blå glasyr", "Skål vit", "Tallrik grå", "Vas hög", "Kanna liten", "Fat ovalt"
-].map((title, i) => ({
+// A workshop's own photos and a catalog built up over years.
+const honestProducts = (titles, [firstType, restType]) => titles.map((title, i) => ({
   title,
   images: [`keramik-${i + 1}.jpg`],
-  type: i < 3 ? "Servis" : "Inredning",
+  type: i < 3 ? firstType : restType,
   created: iso(1800 - i * 120),
   price: "345.00",
   compare: null
 }));
+
+const SE_DROPSHIPPER_PRODUCTS = dropshipperProducts([
+  "Stickad kofta Elsa", "Ullkappa Maja", "Vadderad jacka Ingrid", "Klänning Sofia", "Boots Freja",
+  "Polotröja Karin", "Väst Astrid", "Kappa Linnea", "Sneakers Ebba", "Blus Wilma",
+  "Hoodie Alva", "Jacka Selma"
+], ["Ytterkläder", "Stickat"]);
+const SE_HONEST_PRODUCTS = honestProducts(
+  ["Mugg blå glasyr", "Skål vit", "Tallrik grå", "Vas hög", "Kanna liten", "Fat ovalt"],
+  ["Servis", "Inredning"]);
+
+const NO_DROPSHIPPER_PRODUCTS = dropshipperProducts([
+  "Strikket jakke Nora", "Ullkåpe Maja", "Vattert jakke Ingrid", "Kjole Sofie", "Boots Emma",
+  "Høyhalset genser Kari", "Vest Astrid", "Kåpe Thea", "Joggesko Ella", "Bluse Ingrid",
+  "Hettegenser Live", "Jakke Selma"
+], ["Yttertøy", "Strikk"]);
+const NO_HONEST_PRODUCTS = honestProducts(
+  ["Kopp blå glasur", "Skål hvit", "Tallerken grå", "Vase høy", "Kanne liten", "Fat ovalt"],
+  ["Servise", "Interiør"]);
 
 const productsJson = products => JSON.stringify({
   products: products.map((p, i) => ({
@@ -58,7 +82,7 @@ const productsJson = products => JSON.stringify({
   }))
 });
 
-const page = (title, body) => `<!doctype html><html lang="sv"><head><meta charset="utf-8">
+const page = (lang, title, body) => `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">
 <title>${title}</title>
 <script src="https://cdn.shopify.com/s/files/1/0000/0001/t/1/assets/theme.js"></script>
 <script>Shopify = window.Shopify || {}; Shopify.theme = {"name":"Dawn","id":1};</script>
@@ -83,47 +107,101 @@ const card = (p, i) => `<div class="card"><a href="/products/produkt-${i + 1}">
   <p>${p.title}</p>
   <p>${p.compare ? `<s>${parseInt(p.compare)} kr</s><span class="sale">${parseInt(p.price)} kr</span>` : `${parseInt(p.price)} kr`}</p></div>`;
 
-const SHOPS = {
+// Swedish shops for the English and Swedish screenshots.
+const SE_SHOPS = {
   "www.example.se": {
-    file: "screenshot-reseller.png",
-    products: RESELLER_PRODUCTS,
+    file: "screenshot-dropshipper.png",
+    products: SE_DROPSHIPPER_PRODUCTS,
     pages: {
-      "/": page("Exempel Stockholm", `
+      "/": page("sv", "Exempel Stockholm", `
         <div class="bar">VINTERREA - upp till 70 % rabatt. Rean slutar om 02:14:33</div>
         <header><b>EXEMPEL STOCKHOLM</b><nav><a href="/collections/all">Dam</a><a href="/pages/kontakt">Kontakt</a>
           <a href="/policies/refund-policy">Returer</a><a href="/policies/shipping-policy">Frakt</a><a href="/cart">Varukorg</a></nav></header>
         <section class="hero"><h1>Skandinavisk vinterstil</h1><p>Bara 3 kvar i lager av våra populäraste kappor.</p></section>
-        <section class="grid">${RESELLER_PRODUCTS.slice(0, 8).map(card).join("")}</section>
+        <section class="grid">${SE_DROPSHIPPER_PRODUCTS.slice(0, 8).map(card).join("")}</section>
         <footer>Kundservice: info@exempelmode.example, +86 755 1234 5678</footer>`),
-      "/policies/refund-policy": page("Returer", `<main><h1>Retur- och återbetalningspolicy</h1>
+      "/policies/refund-policy": page("sv", "Returer", `<main><h1>Retur- och återbetalningspolicy</h1>
         <p>Du har 14 dagars ångerrätt.</p>
         <p>Returadress</p><p>Skicka din retur till:</p><p>Unit 1, Example Road 8, Example District</p><p>Shenzhen</p><p>Kina</p>
         <p>Vår registrerade företagsadress är ingen returadress.</p>
         <p>Eventuell importmoms, tull och avgifter debiteras dig och ingår inte i varans pris.</p></main>`),
-      "/policies/shipping-policy": page("Frakt", `<main><h1>Frakt</h1>
+      "/policies/shipping-policy": page("sv", "Frakt", `<main><h1>Frakt</h1>
         <p>Beställningar behandlas inom 1 till 3 arbetsdagar.</p><p>Leveranstid: 10-20 arbetsdagar.</p></main>`),
-      "/pages/kontakt": page("Kontakt", `<main><h1>Kontakt</h1>
+      "/pages/kontakt": page("sv", "Kontakt", `<main><h1>Kontakt</h1>
         <p>E-post: info@exempelmode.example</p><p>Telefon: +86 755 1234 5678</p></main>`)
     }
   },
   "keramik.example.se": {
     file: "screenshot-honest.png",
-    products: HONEST_PRODUCTS,
+    products: SE_HONEST_PRODUCTS,
     pages: {
-      "/": page("Småby Keramik", `
+      "/": page("sv", "Småby Keramik", `
         <div class="bar">Fri frakt över 600 kr</div>
         <header><b>SMÅBY KERAMIK</b><nav><a href="/collections/all">Keramik</a><a href="/pages/om-oss">Om oss</a>
           <a href="/policies/shipping-policy">Frakt</a><a href="/cart">Varukorg</a></nav></header>
         <section class="hero"><h1>Handdrejat i Småby sedan 2019</h1><p>Varje del drejas och glaseras i vår verkstad.</p></section>
-        <section class="grid">${HONEST_PRODUCTS.slice(0, 4).map(card).join("")}</section>
+        <section class="grid">${SE_HONEST_PRODUCTS.slice(0, 4).map(card).join("")}</section>
         <footer>Småby Keramik AB, Org.nr 559999-9991, Kvarngatan 2B, 123 45 Småby, hej@example.se</footer>`),
-      "/policies/shipping-policy": page("Frakt", `<main><h1>Frakt och returer</h1>
+      "/policies/shipping-policy": page("sv", "Frakt", `<main><h1>Frakt och returer</h1>
         <p>Leveranstid: 1-3 arbetsdagar med PostNord.</p>
         <p>Returadress: Kvarngatan 2B, 123 45 Småby.</p></main>`),
-      "/pages/om-oss": page("Om oss", `<main><h1>Om oss</h1>
+      "/pages/om-oss": page("sv", "Om oss", `<main><h1>Om oss</h1>
         <p>Småby Keramik AB, Org.nr 559999-9991, Kvarngatan 2B, 123 45 Småby.</p></main>`)
     }
   }
+};
+
+// Norwegian shops for the Norwegian screenshots: the same two stories on example.no.
+const NO_SHOPS = {
+  "www.example.no": {
+    file: "screenshot-dropshipper.png",
+    products: NO_DROPSHIPPER_PRODUCTS,
+    pages: {
+      "/": page("nb", "Eksempel Oslo", `
+        <div class="bar">VINTERSALG - opptil 70 % rabatt. Salget slutter om 02:14:33</div>
+        <header><b>EKSEMPEL OSLO</b><nav><a href="/collections/all">Dame</a><a href="/pages/kontakt">Kontakt</a>
+          <a href="/policies/refund-policy">Retur</a><a href="/policies/shipping-policy">Frakt</a><a href="/cart">Handlekurv</a></nav></header>
+        <section class="hero"><h1>Skandinavisk vinterstil</h1><p>Kun 3 igjen på lager av våre mest populære kåper.</p></section>
+        <section class="grid">${NO_DROPSHIPPER_PRODUCTS.slice(0, 8).map(card).join("")}</section>
+        <footer>Kundeservice: info@eksempelmote.example, +86 755 1234 5678</footer>`),
+      "/policies/refund-policy": page("nb", "Retur", `<main><h1>Retur og refusjon</h1>
+        <p>Du har 14 dagers angrerett.</p>
+        <p>Returadresse</p><p>Send returen til:</p><p>Unit 1, Example Road 8, Example District</p><p>Shenzhen</p><p>Kina</p>
+        <p>Vår registrerte firmaadresse er ikke en returadresse.</p>
+        <p>Eventuell toll og importmva betales av kunden og er ikke inkludert i prisen.</p></main>`),
+      "/policies/shipping-policy": page("nb", "Frakt", `<main><h1>Frakt</h1>
+        <p>Bestillinger behandles innen 1 til 3 virkedager.</p><p>Leveringstid: 10-20 virkedager.</p></main>`),
+      "/pages/kontakt": page("nb", "Kontakt", `<main><h1>Kontakt</h1>
+        <p>E-post: info@eksempelmote.example</p><p>Telefon: +86 755 1234 5678</p></main>`)
+    }
+  },
+  "keramikk.example.no": {
+    file: "screenshot-honest.png",
+    products: NO_HONEST_PRODUCTS,
+    pages: {
+      "/": page("nb", "Småby Keramikk", `
+        <div class="bar">Fri frakt over 600 kr</div>
+        <header><b>SMÅBY KERAMIKK</b><nav><a href="/collections/all">Keramikk</a><a href="/pages/om-oss">Om oss</a>
+          <a href="/policies/shipping-policy">Frakt</a><a href="/cart">Handlekurv</a></nav></header>
+        <section class="hero"><h1>Dreid for hånd i Småby siden 2019</h1><p>Hver del dreies og glaseres i vårt verksted.</p></section>
+        <section class="grid">${NO_HONEST_PRODUCTS.slice(0, 4).map(card).join("")}</section>
+        <footer>Småby Keramikk AS, Org.nr 999 999 999, Storgata 12, 1234 Småby, hei@example.no</footer>`),
+      "/policies/shipping-policy": page("nb", "Frakt", `<main><h1>Frakt og retur</h1>
+        <p>Leveringstid: 1-3 virkedager med Posten.</p>
+        <p>Returadresse: Storgata 12, 1234 Småby.</p></main>`),
+      "/pages/om-oss": page("nb", "Om oss", `<main><h1>Om oss</h1>
+        <p>Småby Keramikk AS, Org.nr 999 999 999, Storgata 12, 1234 Småby, Norge.</p></main>`)
+    }
+  }
+};
+
+const SHOPS = LANG === "nb" ? NO_SHOPS : SE_SHOPS;
+
+// The promo tile's tagline per language.
+const TAGLINES = {
+  en: "Spot dropshipping shops<br>before you buy",
+  sv: "Avslöja dropshippingbutiker<br>innan du handlar",
+  nb: "Avslør dropshippingbutikker<br>før du handler"
 };
 
 // Plain colored placeholder for every product image, with its name.
@@ -215,12 +293,12 @@ async function shootPromo(browser) {
   const icon = readFileSync(path.join(ROOT, "assets", "icon.svg"), "base64");
   const tile = await browser.newPage();
   await tile.setViewport({ width: 440, height: 280 });
-  await tile.setContent(`<!doctype html><html><body style="margin:0;width:440px;height:280px;display:flex;
+  await tile.setContent(`<!doctype html><html lang="${LANG || "en"}"><body style="margin:0;width:440px;height:280px;display:flex;
     align-items:center;gap:22px;padding:0 34px;box-sizing:border-box;background:#fbfaf8;
     font-family:system-ui,'Segoe UI',sans-serif;color:#1d1d1b">
     <img src="data:image/svg+xml;base64,${icon}" width="96" height="96">
     <div><div style="font-size:38px;font-weight:700;line-height:1.1">DropCheck</div>
-    <div style="font-size:18px;margin-top:8px;color:#5d5b57">Spot dropshipping shops<br>before you buy</div></div>
+    <div style="font-size:18px;margin-top:8px;color:#5d5b57">${TAGLINES[LANG || "en"]}</div></div>
     </body></html>`);
   await tile.screenshot({ path: path.join(OUT, "promo-small.png") });
   await tile.close();
@@ -240,6 +318,8 @@ async function main() {
     await probe.goto(`chrome-extension://${extensionId}/popup/popup.html?probe`);
     await probe.waitForFunction(
       async () => (await chrome.scripting.getRegisteredContentScripts()).length > 0, { polling: 250 });
+    // Without --lang the popup follows the browser's language, which is English here.
+    if (LANG) await probe.evaluate((key, lang) => chrome.storage.local.set({ [key]: lang }), LANGUAGE_KEY, LANG);
     for (const [host, shop] of Object.entries(SHOPS)) await shootShop(browser, worker, probe, host, shop);
     await shootPromo(browser);
   } finally {

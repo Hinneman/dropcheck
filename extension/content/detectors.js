@@ -266,17 +266,20 @@
   const FOREIGN_WAREHOUSE_RE = new RegExp(`${W0}(${words("foreignWarehouse")})${W1}`, "i");
   const NOT_RETURN_ADDRESS_RE = new RegExp(`${W0}(${words("notReturnAddress")})${W1}`, "i");
 
-  // Labels for each sign that returns go abroad or to an unnamed place. A company
-  // address marked as "not a return address" is reported only next to one of the others:
-  // honest shops say that too when their returns go to a separate domestic warehouse.
+  // One token per sign that returns go abroad or to an unnamed place: "place:<name as
+  // written>", "warehouse:<phrase as written>" or "notReturnAddress". Strings, so the
+  // collector can merge page and policy findings in a Set; the popup words them in the
+  // chosen language. A company address marked as "not a return address" is reported only
+  // next to one of the others: honest shops say that too when their returns go to a
+  // separate domestic warehouse.
   function detectReturnsAbroad(text) {
     const found = [];
     const place = [...text.matchAll(RETURN_TO_PLACE_RE)]
       .find(m => !DOMESTIC_ADDRESS_RES.some(re => re.test(m[1])));
-    if (place) found.push(`return address in ${place[2].replace(/\s+/g, " ")}`);
+    if (place) found.push(`place:${place[2].replace(/\s+/g, " ")}`);
     const warehouse = text.match(FOREIGN_WAREHOUSE_RE);
-    if (warehouse) found.push(`returns go to an "${warehouse[1].toLowerCase()}"`);
-    if (found.length && NOT_RETURN_ADDRESS_RE.test(text)) found.push('the company address is "not a return address"');
+    if (warehouse) found.push(`warehouse:${warehouse[1].toLowerCase()}`);
+    if (found.length && NOT_RETURN_ADDRESS_RE.test(text)) found.push("notReturnAddress");
     return found;
   }
 
@@ -331,17 +334,18 @@
     return ADDRESS_RES.some(re => re.test(text));
   }
 
-  // International dialling codes, longest first when read from a number.
+  // International dialling codes and the regions (ISO 3166 codes) they ring, longest
+  // first when read from a number. The popup names the regions in the chosen language.
   const PHONE_COUNTRIES = {
-    1: "USA or Canada", 7: "Russia", 27: "South Africa", 31: "Netherlands", 32: "Belgium",
-    33: "France", 34: "Spain", 36: "Hungary", 39: "Italy", 40: "Romania", 41: "Switzerland",
-    43: "Austria", 44: "United Kingdom", 45: "Denmark", 46: "Sweden", 47: "Norway", 48: "Poland",
-    49: "Germany", 52: "Mexico", 55: "Brazil", 60: "Malaysia", 61: "Australia", 62: "Indonesia",
-    63: "Philippines", 64: "New Zealand", 65: "Singapore", 66: "Thailand", 81: "Japan",
-    82: "South Korea", 84: "Vietnam", 86: "China", 90: "Turkey", 91: "India", 351: "Portugal",
-    353: "Ireland", 354: "Iceland", 358: "Finland", 370: "Lithuania", 371: "Latvia",
-    372: "Estonia", 380: "Ukraine", 420: "Czechia", 852: "Hong Kong", 886: "Taiwan",
-    971: "United Arab Emirates"
+    1: ["US", "CA"], 7: ["RU"], 27: ["ZA"], 31: ["NL"], 32: ["BE"],
+    33: ["FR"], 34: ["ES"], 36: ["HU"], 39: ["IT"], 40: ["RO"], 41: ["CH"],
+    43: ["AT"], 44: ["GB"], 45: ["DK"], 46: ["SE"], 47: ["NO"], 48: ["PL"],
+    49: ["DE"], 52: ["MX"], 55: ["BR"], 60: ["MY"], 61: ["AU"], 62: ["ID"],
+    63: ["PH"], 64: ["NZ"], 65: ["SG"], 66: ["TH"], 81: ["JP"],
+    82: ["KR"], 84: ["VN"], 86: ["CN"], 90: ["TR"], 91: ["IN"], 351: ["PT"],
+    353: ["IE"], 354: ["IS"], 358: ["FI"], 370: ["LT"], 371: ["LV"],
+    372: ["EE"], 380: ["UA"], 420: ["CZ"], 852: ["HK"], 886: ["TW"],
+    971: ["AE"]
   };
 
   // Country calling codes of the "+NN ..." phone numbers in the text, without duplicates.
@@ -356,24 +360,25 @@
     return [...codes];
   }
 
-  function phoneCountry(code) {
-    return PHONE_COUNTRIES[code] || null;
+  function phoneRegions(code) {
+    return PHONE_COUNTRIES[code] || [];
   }
 
   // Which market the store presents itself to. The domain is the strongest claim,
-  // then page language, then Shopify's market setting, then a currency code.
+  // then page language, then Shopify's market setting, then a currency code. The reason
+  // is { by, value } so the popup can word it in the chosen language.
   function detectMarket({ host = "", lang = "", shopifyCountry = "", text = "" }) {
     const entries = Object.entries(MARKETS);
-    const pick = (test, reason) => {
+    const pick = (test, by, value) => {
       const hit = entries.find(([, m]) => test(m));
-      return hit ? { id: hit[0], name: hit[1].name, reason } : null;
+      return hit ? { id: hit[0], name: hit[1].name, reason: { by, value } } : null;
     };
     const tld = host.toLowerCase().split(".").pop();
     const code = lang.toLowerCase().split("-")[0];
-    return pick(m => m.tlds.includes(tld), `.${tld} domain`) ||
-      (code && pick(m => m.langs.includes(code), `page language "${lang}"`)) ||
-      (shopifyCountry && pick(m => m.country === shopifyCountry.toUpperCase(), `Shopify market ${shopifyCountry}`)) ||
-      pick(m => m.currencies.some(c => new RegExp(`\\b${c}\\b`).test(text)), "currency code") ||
+    return pick(m => m.tlds.includes(tld), "tld", tld) ||
+      (code && pick(m => m.langs.includes(code), "lang", lang)) ||
+      (shopifyCountry && pick(m => m.country === shopifyCountry.toUpperCase(), "shopify", shopifyCountry)) ||
+      pick(m => m.currencies.some(c => new RegExp(`\\b${c}\\b`).test(text)), "currency", "") ||
       null;
   }
 
@@ -513,7 +518,7 @@
     registrableDomain, tldInfo,
     detectCountdownText, detectStockUrgency, detectViewerCount,
     extractShippingQuotes, detectReturnsAbroad, detectImportCharges,
-    findCompanyIds, detectAddress, extractPhoneCodes, phoneCountry,
+    findCompanyIds, detectAddress, extractPhoneCodes, phoneRegions,
     detectMarket, extractEmails, isFreemail, isServiceEmailDomain, sameBrand, detectBoilerplate,
     parsePrices, toNumber, discountOff,
     isCartLabel, isAddToCartHref, isBuyLabel

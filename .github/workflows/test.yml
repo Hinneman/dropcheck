@@ -14,8 +14,8 @@ jobs:
       # The tests do not use a browser; Puppeteer is only needed for npm run eval.
       PUPPETEER_SKIP_DOWNLOAD: "true"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

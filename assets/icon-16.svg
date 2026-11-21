@@ -1,12 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <!-- Simplified 16 px version of icon.svg, drawn on the pixel grid. -->
-  <rect width="16" height="16" rx="3" fill="#000"/>
-  <g shape-rendering="crispEdges">
-    <rect x="2" y="3" width="9" height="2" fill="#FCD34D"/>
-    <rect x="2" y="5" width="9" height="7" fill="#F59E0B"/>
-    <rect x="6" y="3" width="1" height="3" fill="#B45309"/>
+  <defs>
+    <!-- Cuts a transparent ring around the badge so it stands apart from the box. -->
+    <mask id="badge-gap">
+      <rect width="16" height="16" fill="#fff"/>
+      <circle cx="11.5" cy="11.5" r="4.5" fill="#000"/>
+    </mask>
+  </defs>
+  <g shape-rendering="crispEdges" mask="url(#badge-gap)">
+    <rect x="1" y="2" width="10" height="2" fill="#FCD34D"/>
+    <rect x="1" y="4" width="10" height="8" fill="#F59E0B"/>
+    <rect x="5" y="2" width="2" height="3" fill="#B45309"/>
   </g>
-  <circle cx="11.5" cy="11.5" r="3.5" fill="#16A34A" stroke="#000" stroke-width="1"/>
+  <circle cx="11.5" cy="11.5" r="3.5" fill="#16A34A"/>
   <g fill="#fff" shape-rendering="crispEdges">
     <rect x="9" y="11" width="1" height="1"/>
     <rect x="10" y="12" width="1" height="1"/>

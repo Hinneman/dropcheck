@@ -48,9 +48,7 @@ extension/                 load this folder in Chrome
   popup/                   verdict, fired rules, context, "Find the source",
                            automatic scanning setting
   icons/                   PNG icons rendered from assets/ (npm run icons)
-assets/icon.svg            icon source
-assets/icon-16.svg,        simplified toolbar versions (16 and 32 px), drawn on the
-assets/icon-32.svg         pixel grid
+assets/icon.svg            icon source, rendered at every size
 scripts/render-icons.js    renders the PNG icons with Puppeteer
 eval/
   run.js                   Puppeteer harness -> eval/results.csv + false positive rate

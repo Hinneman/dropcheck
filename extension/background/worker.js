@@ -114,8 +114,14 @@ async function handleSignals(tabId, page, payload) {
   waiters.delete(tabId);
 }
 
+// The check mark lives in the badge, not the icon, so it only shows once a store
+// has actually been checked. Non-store pages get no badge.
 function setBadge(tabId, band) {
-  const badge = { likely: ["!", "#b42318"], mixed: ["?", "#b54708"] }[band];
+  const badge = {
+    likely: ["!", "#b42318"],
+    mixed: ["?", "#b54708"],
+    none: ["✓", "#16a34a"]
+  }[band];
   chrome.action.setBadgeText({ tabId, text: badge ? badge[0] : "" }).catch(() => {});
   if (badge) chrome.action.setBadgeBackgroundColor({ tabId, color: badge[1] }).catch(() => {});
 }

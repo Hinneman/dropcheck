@@ -8,24 +8,21 @@ import puppeteer from "puppeteer";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = path.join(ROOT, "extension", "icons");
-// The toolbar sizes (16, 32) have their own simplified drawings, because the full
-// icon's details blur together there. 48 and 128 render icon.svg at 75 % with
-// transparent padding: Chrome's guideline for the store and management icons
-// (96 px artwork in a 128 px icon).
+// Every size renders icon.svg. The toolbar sizes (16, 32) fill the whole square;
+// 48 and 128 render at 75 % with transparent padding: Chrome's guideline for the
+// store and management icons (96 px artwork in a 128 px icon).
 const SIZES = [
-  { size: 16, file: "icon-16.svg" },
-  { size: 32, file: "icon-32.svg" },
+  { size: 16 },
+  { size: 32 },
   { size: 48, pad: 6 },
   { size: 128, pad: 16 }
 ];
 
-const read = file => readFileSync(path.join(ROOT, "assets", file), "utf8").replace(/^<\?xml[^>]*\?>/, "");
-const source = read("icon.svg");
+const svg = readFileSync(path.join(ROOT, "assets", "icon.svg"), "utf8").replace(/^<\?xml[^>]*\?>/, "");
 const browser = await puppeteer.launch();
 try {
   const page = await browser.newPage();
-  for (const { size, file, pad = 0 } of SIZES) {
-    const svg = file ? read(file) : source;
+  for (const { size, pad = 0 } of SIZES) {
     const art = size - 2 * pad;
     await page.setViewport({ width: size, height: size, deviceScaleFactor: 1 });
     await page.setContent(

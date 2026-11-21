@@ -1,0 +1,62 @@
+name: False alarm
+description: DropCheck flagged a store that is not a reseller or dropshipper.
+title: "False alarm: "
+labels: ["false alarm"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Stores that DropCheck gets wrong are the most useful data for
+        tuning its rules. Please do not post order numbers, addresses or other personal data.
+
+  - type: input
+    id: url
+    attributes:
+      label: Store URL
+      placeholder: https://www.example.se/
+    validations:
+      required: true
+
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Verdict shown
+      options:
+        - Likely reseller
+        - Mixed signals
+    validations:
+      required: true
+
+  - type: input
+    id: score
+    attributes:
+      label: Score shown
+      description: The "Score X of Y" line in the popup.
+      placeholder: Score 65 of 125
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: Reasons shown in the popup
+      description: Copy the listed reasons, or attach a screenshot of the popup.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Why the store is legitimate
+      description: >
+        For example: makes or designs its own products, has a registered company with an
+        org. number, a physical shop, or has been trading for years. Links help.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: DropCheck version
+      description: Shown on chrome://extensions under DropCheck.
+      placeholder: "0.3.0"
+    validations:
+      required: true

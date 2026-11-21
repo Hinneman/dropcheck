@@ -18,9 +18,7 @@
     window.__dropcheck.then(send);
     return;
   }
-  window.__dropcheck = collect().catch(err => ({
-    host: location.hostname, url: location.href, isStore: false, error: String(err)
-  }));
+  window.__dropcheck = collect().catch(err => ({ v: 1, isStore: false, error: String(err) }));
   window.__dropcheck.then(send);
 
   // ---------- Page reading ----------
@@ -159,7 +157,9 @@
 
   // ---------- Site-level facts (same-origin fetches) ----------
 
-  const POLICY_LINK = /(terms|villkor|shipping|frakt|leverans|delivery|contact|kontakt|about|om-oss|om oss|imprint|impressum|retur|return|refund|faq)/i;
+  // Path only, not link text: a "Log out and return" link must never be fetched.
+  const POLICY_LINK = /(terms|villkor|shipping|frakt|leverans|delivery|contact|kontakt|about|om-oss|imprint|impressum|retur|return|refund|faq)/i;
+  const UNSAFE_PATH = /(account|konto|login|logout|log-out|signin|sign-in|signout|sign-out|cart|varukorg|checkout|kassa|order|cancel|delete|remove|unsubscribe|wishlist)/i;
   const SHOPIFY_PATHS = ["/policies/terms-of-service", "/policies/shipping-policy",
                          "/policies/refund-policy", "/pages/contact"];
 
@@ -169,7 +169,7 @@
       let u;
       try { u = new URL(a.href); } catch { continue; }
       if (u.origin !== location.origin || u.pathname === location.pathname) continue;
-      if (POLICY_LINK.test(u.pathname) || POLICY_LINK.test(a.textContent || "")) paths.push(u.pathname);
+      if (POLICY_LINK.test(u.pathname) && !UNSAFE_PATH.test(u.pathname)) paths.push(u.pathname);
     }
     if (platform === "shopify") paths.unshift(...SHOPIFY_PATHS);
     return [...new Set(paths)].slice(0, 7);
@@ -179,7 +179,8 @@
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     try {
-      return await fetch(url, { signal: ctrl.signal, credentials: "same-origin" });
+      // No cookies: a logged-in fetch could read the user's data or trigger a state-changing GET.
+      return await fetch(url, { signal: ctrl.signal, credentials: "omit" });
     } finally {
       clearTimeout(timer);
     }
@@ -196,7 +197,7 @@
       const mailtos = [...doc.querySelectorAll('a[href^="mailto:"]')]
         .map(a => a.getAttribute("href").slice(7).split("?")[0]).join("\n");
       const text = (doc.body ? doc.body.textContent : "")
-        .replace(/[ \t ]+/g, " ").replace(/\n\s*\n+/g, "\n");
+        .replace(/[ \t\u00a0]+/g, " ").replace(/\n\s*\n+/g, "\n");
       return (text.slice(0, 40000) + "\n" + mailtos);
     } catch {
       return null;
@@ -269,6 +270,8 @@
     const ld = jsonLdObjects();
     const isStore = looksLikeStore(platform, ld);
 
+    if (!isStore) return { v: 1, isStore: false };
+
     const base = {
       v: 1,
       url: location.href,
@@ -276,7 +279,6 @@
       isStore,
       platform
     };
-    if (!isStore) return base;
 
     const site = await siteFacts(platform);
     const pageCompany = D.findCompanyIds(text);

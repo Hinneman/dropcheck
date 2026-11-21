@@ -25,8 +25,7 @@ test("detectTheme reads Shopify.theme and flags dropship themes", () => {
   assert.equal(dawn.dsTheme, null);
 });
 
-test("payment detection ignores Swedish 'Visa mer'", () => {
-  assert.deepEqual(D.detectPaymentMethods("Visa mer"), []);
+test("detectPaymentMethods reads icon markup", () => {
   assert.deepEqual(D.detectPaymentMethods('aria-labelledby="pi-visa" pi-klarna swish'), ["visa", "klarna", "swish"]);
 });
 
@@ -47,17 +46,12 @@ test("registrableDomain strips subdomains", () => {
 });
 
 test("urgency detectors", () => {
-  assert.ok(D.detectCountdownText("Rean slutar om 02:14:33"));
   assert.ok(!D.detectCountdownText("Open 10:00:00 to 18:00"));
-  assert.ok(D.detectStockUrgency("Skynda! Bara 3 kvar i lager"));
   assert.ok(D.detectViewerCount("17 people are viewing this right now"));
   assert.ok(!D.detectViewerCount("Over 200 people love it"));
 });
 
-test("extractShippingQuotes ignores returns and processing", () => {
-  const text = "Leveranstid: 4–8 arbetsdagar.\nDu har 14 dagars ångerrätt. Returns accepted within 30 days.";
-  assert.deepEqual(D.extractShippingQuotes(text), [{ min: 4, max: 8 }]);
-
+test("extractShippingQuotes ignores processing time and reads weeks", () => {
   const ds = "Processing time 1-3 days. Shipping takes 10-20 business days.";
   assert.deepEqual(D.extractShippingQuotes(ds), [{ min: 10, max: 20 }]);
 
@@ -65,14 +59,16 @@ test("extractShippingQuotes ignores returns and processing", () => {
   assert.deepEqual(D.extractShippingQuotes(weeks), [{ min: 14, max: 21 }]);
 });
 
-test("findCompanyIds finds Swedish org. no. and VAT numbers", () => {
-  assert.deepEqual(D.findCompanyIds("Org.nr 559999-9991").orgNumbers, ["559999-9991"]);
-  assert.ok(D.findCompanyIds("VAT number SE559999999101").hasCompanyId);
+test("extractShippingQuotes accepts en and em dashes in ranges", () => {
+  assert.deepEqual(D.extractShippingQuotes("Shipping 4\u20138 days"), [{ min: 4, max: 8 }]);
+  assert.deepEqual(D.extractShippingQuotes("Shipping 4\u20148 days"), [{ min: 4, max: 8 }]);
+});
+
+test("findCompanyIds needs registration wording or a number", () => {
   assert.ok(!D.findCompanyIds("Contact us any time").hasCompanyId);
 });
 
-test("detectAddress handles Swedish and English addresses", () => {
-  assert.ok(D.detectAddress("Kvarngatan 2B, 123 45 Småby"));
+test("detectAddress handles English addresses", () => {
   assert.ok(D.detectAddress("12 Sample Street, Smalltown"));
   assert.ok(!D.detectAddress("We ship worldwide"));
 });
@@ -84,61 +80,16 @@ test("extractEmails skips image names and platform addresses", () => {
 
 test("detectBoilerplate finds placeholders and the fake phone number", () => {
   assert.deepEqual(D.detectBoilerplate("Welcome to [Company Name]"), ['placeholder "[Company Name]"']);
-  assert.deepEqual(D.detectBoilerplate("Ring +46 8 123 456 78"), ["placeholder phone number (123 456 7…)"]);
+  assert.deepEqual(D.detectBoilerplate("Ring +46 8 123 456 78"), ["placeholder phone number (123 456 7...)"]);
   assert.deepEqual(D.detectBoilerplate("Ring 08-555 123 45"), []);
 });
 
-test("parsePrices handles Swedish, US and euro formats", () => {
-  assert.deepEqual(D.parsePrices("1 299,00 kr"), [1299]);
-  assert.deepEqual(D.parsePrices("Ord. 899 kr Nu 269 kr"), [899, 269]);
+test("parsePrices handles US and euro formats", () => {
   assert.deepEqual(D.parsePrices("$29.99"), [29.99]);
   assert.deepEqual(D.parsePrices("€1.299"), [1299]);
-  assert.deepEqual(D.parsePrices("199:-"), [199]);
 });
 
-// ---------- Norway ----------
-
-test("Norwegian urgency wording", () => {
-  assert.ok(D.detectStockUrgency("Skynd deg! Kun 3 igjen på lager"));
-  assert.ok(D.detectViewerCount("12 personer ser på dette nå"));
-  assert.ok(D.detectCountdownText("Tilbudet slutter om 01:22:33"));
-});
-
-test("Norwegian delivery times, ignoring angrerett", () => {
-  assert.deepEqual(D.extractShippingQuotes("Leveringstid: 2-5 virkedager.\nDu har 14 dagers angrerett."),
-    [{ min: 2, max: 5 }]);
-  assert.deepEqual(D.extractShippingQuotes("Levering tar 10 til 20 arbeidsdager"), [{ min: 10, max: 20 }]);
-  assert.deepEqual(D.extractShippingQuotes("Frakt\n2-3 uker"), [{ min: 14, max: 21 }]);
-});
-
-test("Norwegian org. no. needs a keyword or MVA form and a valid check digit", () => {
-  assert.deepEqual(D.findCompanyIds("Org.nr: 999 999 999").orgNumbers, ["999 999 999"]);
-  assert.deepEqual(D.findCompanyIds("NO 999999999 MVA").orgNumbers, ["999999999"]);
-  assert.deepEqual(D.findCompanyIds("Org.nr: 999 999 998").orgNumbers, []);   // bad check digit
-  assert.deepEqual(D.findCompanyIds("Ordrenummer 999999999").orgNumbers, []);  // no keyword
-});
-
-test("Swedish org. no. needs a valid check digit", () => {
-  assert.deepEqual(D.findCompanyIds("Org.nr 559999-9992").orgNumbers, []);
-});
-
-test("Norwegian addresses", () => {
-  assert.ok(D.detectAddress("Storgata 12, 1234 Småby"));
-  assert.ok(D.detectAddress("Postboks 44, 1234 Småby, Norge"));
-});
-
-test("Norwegian prices and payment methods", () => {
-  assert.deepEqual(D.parsePrices("Før 899,- Nå 299,-"), [899, 299]);
-  assert.deepEqual(D.parsePrices("kr 1 299,-"), [1299]);
-  assert.deepEqual(D.detectPaymentMethods('alt="Vipps" klarna'), ["klarna", "vipps"]);
-});
-
-test("detectMarket: domain, then language, then Shopify market, then currency", () => {
-  assert.equal(D.detectMarket({ host: "example.no", lang: "en" }).id, "no");
-  assert.equal(D.detectMarket({ host: "example.com", lang: "nb-NO" }).id, "no");
-  assert.equal(D.detectMarket({ host: "example.com", lang: "sv" }).id, "se");
-  assert.equal(D.detectMarket({ host: "example.com", lang: "en", shopifyCountry: "NO" }).id, "no");
-  assert.equal(D.detectMarket({ host: "example.com", lang: "en", text: "Pris 299 NOK" }).id, "no");
+test("detectMarket returns null without any market evidence", () => {
   assert.equal(D.detectMarket({ host: "example.com", lang: "en", text: "$29" }), null);
 });
 

@@ -11,7 +11,7 @@
     <p id="host" class="muted"></p>
   </header>
 
-  <p id="status" class="muted">Scanning…</p>
+  <p id="status" class="muted">Scanning...</p>
 
   <main id="result" hidden>
     <section id="verdict" class="verdict">
@@ -34,13 +34,25 @@
       <h2>Find the source</h2>
       <p class="muted small">Opens Google Lens with the product image, so you can check whether
         the same photo is sold on AliExpress or Temu. Sends only the image URL, and only when you click.</p>
-      <div id="images" class="images"></div>
+      <button id="show-images" type="button">Show product images</button>
+      <div id="images" class="images" hidden></div>
     </section>
   </main>
 
+  <section class="settings">
+    <label>
+      <input id="auto-scan" type="checkbox">
+      Check shops automatically as I browse
+    </label>
+    <p class="muted small">Shows a warning badge without opening DropCheck. Needs permission
+      to read every https:// page you visit; the reading stays in your browser. Off: pages
+      are read only when you open this popup.</p>
+  </section>
+
   <footer class="muted small">
     Observations about this page, not a judgment of the company. Analysis runs in your
-    browser; only the domain name is sent to rdap.org to look up its registration date.
+    browser; only the domain name is sent to rdap.org, which forwards the lookup to the
+    domain's registry, to find its registration date.
   </footer>
 
   <script src="popup.js" type="module"></script>

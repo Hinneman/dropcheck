@@ -64,7 +64,7 @@
   }
 
   const PAYMENT_PATTERNS = {
-    // Not followed by "mer/fler/alla…": Swedish "Visa mer" means "show more".
+    // Not followed by "mer/fler/alla...": Swedish "Visa mer" means "show more".
     visa:       /pi-visa|\bvisa\b(?!\s+(mer|fler|alla|detaljer|mindre|hela|produkt))/,
     mastercard: /mastercard|pi-master/,
     amex:       /american[\s_-]?express|\bamex\b/,
@@ -91,7 +91,7 @@
   }
 
   // Marketplace image file names that survive re-upload to the shop's own CDN:
-  //   AliExpress: "S" or "H" + 32 hex characters        Sd1c2…f6.jpg
+  //   AliExpress: "S" or "H" + 32 hex characters        Sd1c2...f6.jpg
   //   Amazon:     11-character ID + "._AC_"-style suffix 61AbCdEfGhL._AC_SL1500.jpg
   const SUPPLIER_FILE_RES = [
     /^([SH][0-9a-f]{32})(?:[._-]|$)/i,
@@ -168,7 +168,7 @@
   const NOT_SHIP_WORDS = new RegExp(`(${words("notShip")})`, "i");
   const WEEK_UNIT_RE = new RegExp(`^(?:${words("weeks")})$`, "i");
   const UNIT = `(?:(?:${words("dayPrefix")})[\\s-]?)?(${words("days")}|${words("weeks")})${W1}`;
-  const RANGE_RE = new RegExp(`\\b(\\d{1,2})\\s*(?:-|–|—|to|till|til|à|bis)\\s*(\\d{1,2})\\s*${UNIT}`, "gi");
+  const RANGE_RE = new RegExp(`\\b(\\d{1,2})\\s*(?:-|\\u2013|\\u2014|to|till|til|à|bis)\\s*(\\d{1,2})\\s*${UNIT}`, "gi");
   const SINGLE_RE = new RegExp(`\\b(\\d{1,2})\\s*${UNIT}`, "gi");
 
   function clauseAround(text, start, end) {
@@ -281,10 +281,10 @@
 
   const BOILERPLATE = [
     [/\[(?:company|store|shop|business)\s*name\]/i, 'placeholder "[Company Name]"'],
-    [/\[your\s+(?:company|store|shop|business|email|address|website)[^\]]{0,30}\]/i, 'placeholder "[Your …]"'],
-    [/\[(?:insert|enter)\s[^\]]{2,40}\]/i, 'placeholder "[Insert …]"'],
+    [/\[your\s+(?:company|store|shop|business|email|address|website)[^\]]{0,30}\]/i, 'placeholder "[Your ...]"'],
+    [/\[(?:insert|enter)\s[^\]]{2,40}\]/i, 'placeholder "[Insert ...]"'],
     [/\{\{\s*shop\.[a-z_]+\s*\}\}/i, "unrendered template variable"],
-    [/\+\d{1,3}[\s-]?\(?\d?\)?[\s-]?123[\s-]?456[\s-]?7/, "placeholder phone number (123 456 7…)"],
+    [/\+\d{1,3}[\s-]?\(?\d?\)?[\s-]?123[\s-]?456[\s-]?7/, "placeholder phone number (123 456 7...)"],
     [/@(?:example|yourdomain|yourstore)\.com/i, "placeholder email address"]
   ];
 
@@ -300,7 +300,7 @@
     "gi");
 
   function toNumber(raw) {
-    const s = raw.replace(/[\s  ]/g, "");
+    const s = raw.replace(/[\s\u00a0\u202f]/g, "");
     const m = s.match(/^(.*?)[.,](\d{1,2})$/);
     const intPart = (m ? m[1] : s).replace(/[.,]/g, "");
     return parseFloat(intPart + (m ? "." + m[2] : ""));

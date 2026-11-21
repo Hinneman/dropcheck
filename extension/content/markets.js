@@ -110,7 +110,7 @@
       localPayments: ["vipps", "klarna", "invoice", "walley", "svea"],
       localPaymentLabel: "Vipps, Klarna or invoice",
       // A bare 9-digit number is too common to trust, so require the keyword or the
-      // "NO … MVA" VAT form, and the check digit.
+      // "NO ... MVA" VAT form, and the check digit.
       orgNumber: {
         re: /(?:\borg\.?\s*(?:nr|nummer)\.?|organisasjonsnummer|foretaksnummer|foretaksregisteret)\s*:?\s*(?:NO\s?)?(\d{3}\s?\d{3}\s?\d{3})\b|\bNO\s?(\d{3}\s?\d{3}\s?\d{3})\s?MVA\b/gi,
         valid: n => mod11Valid(n.replace(/\D/g, ""))

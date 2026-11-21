@@ -7,7 +7,8 @@
 //
 // Any CSV works as long as one row has a "URL" and a "Label" column header, so the
 // spreadsheet export can be passed as is. Rows without both values are skipped.
-import { readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
@@ -51,7 +52,7 @@ function parseCsv(src) {
 }
 
 function loadDataset(file) {
-  const rows = parseCsv(readFileSync(file, "utf8").replace(/^﻿/, ""));
+  const rows = parseCsv(readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
   const headerIdx = rows.findIndex(r => {
     const lower = r.map(c => c.trim().toLowerCase());
     return lower.includes("url") && lower.includes("label");
@@ -65,9 +66,23 @@ function loadDataset(file) {
 }
 
 const csvCell = v => {
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
+
+// Headless Chrome cannot click through the permission prompt, so the eval loads a copy
+// of the extension with automatic scanning granted in the manifest.
+function autoScanCopy() {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "dropcheck-eval-"));
+  cpSync(EXTENSION, dir, { recursive: true });
+  const manifestPath = path.join(dir, "manifest.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  manifest.host_permissions = manifest.optional_host_permissions;
+  delete manifest.optional_host_permissions;
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  return dir;
+}
 
 // Verdicts are read from chrome.storage.session through an extension page. The
 // service worker is not used for this because Chrome stops it when idle.
@@ -78,6 +93,9 @@ async function openProbe(browser) {
   const extensionId = new URL(target.url()).host;
   const probe = await browser.newPage();
   await probe.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+  await probe.waitForFunction(
+    async () => (await chrome.scripting.getRegisteredContentScripts()).length > 0,
+    { timeout: 30000, polling: 250 });
   return probe;
 }
 
@@ -106,7 +124,7 @@ function summarise(results) {
     s.n++;
     s[r.band || "error"]++;
   }
-  const pctOf = (x, n) => (n ? `${Math.round((100 * x) / n)} %` : "–");
+  const pctOf = (x, n) => (n ? `${Math.round((100 * x) / n)} %` : "-");
   console.log("\nlabel                 n   likely   mixed   none   not_store  error");
   for (const s of byLabel.values()) {
     console.log(`${s.label.padEnd(20)} ${String(s.n).padStart(3)}   ${pctOf(s.likely, s.n).padStart(6)}  ` +
@@ -125,10 +143,11 @@ async function main() {
   const rows = loadDataset(opts.dataset).slice(0, opts.limit);
   console.log(`Evaluating ${rows.length} stores from ${path.relative(ROOT, opts.dataset)}`);
 
+  const extensionDir = autoScanCopy();
   const browser = await puppeteer.launch({
     headless: !opts.headful,
     pipe: true,
-    enableExtensions: [EXTENSION]
+    enableExtensions: [extensionDir]
   });
   const results = [];
   try {
@@ -136,7 +155,7 @@ async function main() {
     const page = await browser.newPage();
     await page.setViewport({ width: 1366, height: 900 });
     for (const row of rows) {
-      process.stdout.write(`${row.url} … `);
+      process.stdout.write(`${row.url} ... `);
       try {
         const { verdict } = await verdictFor(probe, page, row.url);
         results.push({ ...row, score: verdict.score, band: verdict.band,
@@ -149,6 +168,7 @@ async function main() {
     }
   } finally {
     await browser.close();
+    rmSync(extensionDir, { recursive: true, force: true });
   }
 
   const header = ["url", "label", "score", "band", "rulesFired", "error"];

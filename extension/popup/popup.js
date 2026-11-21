@@ -46,7 +46,7 @@ function firedByCategory(verdict) {
     name.textContent = CATEGORY_LABELS[cat] || cat;
     const total = document.createElement("span");
     total.className = "points";
-    total.textContent = raw > counted ? `${raw} → ${counted} (cap ${cap})` : `+${counted}`;
+    total.textContent = raw > counted ? `${raw}, capped to ${counted}` : `+${counted}`;
     head.append(name, total);
 
     // A lone rule's weight would just repeat the header total, so it is left off.
@@ -79,8 +79,17 @@ function render(entry) {
   $("context-section").hidden = verdict.context.length === 0;
   $("context").replaceChildren(...verdict.context.map(t => li(t)));
 
+  // Loaded on request only: the store's image server would otherwise see every popup open.
   const images = signals.productImages || [];
   $("images-section").hidden = images.length === 0;
+  $("show-images").addEventListener("click", () => {
+    $("show-images").hidden = true;
+    $("images").hidden = false;
+    showImages(images);
+  }, { once: true });
+}
+
+function showImages(images) {
   $("images").replaceChildren(...images.map(url => {
     const btn = document.createElement("button");
     btn.title = "Search this image with Google Lens";
@@ -95,7 +104,23 @@ function render(entry) {
   }));
 }
 
+// Only toggles the permission; the worker reacts to it. The permission dialog can close
+// the popup before request() resolves.
+const AUTO_SCAN = { origins: ["https://*/*"] };
+
+async function setupAutoScan() {
+  const box = $("auto-scan");
+  box.checked = await chrome.permissions.contains(AUTO_SCAN);
+  box.addEventListener("change", async () => {
+    const granted = box.checked
+      ? await chrome.permissions.request(AUTO_SCAN)
+      : !(await chrome.permissions.remove(AUTO_SCAN));
+    box.checked = granted;
+  });
+}
+
 async function main() {
+  setupAutoScan().catch(() => {});
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   let host = "";
   try { host = new URL(tab.url).hostname; } catch { /* no URL access for this tab */ }

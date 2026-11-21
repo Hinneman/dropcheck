@@ -9,6 +9,6 @@
     "eval": "node eval/run.js"
   },
   "devDependencies": {
-    "puppeteer": "^24.10.0"
+    "puppeteer": "^25.18.1"
   }
 }

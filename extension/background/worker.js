@@ -6,6 +6,7 @@ import { scoreSignals } from "./score.js";
 const D = globalThis.DropCheckDetectors;
 const AGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;      // successful lookups
 const AGE_FAIL_TTL_MS = 24 * 60 * 60 * 1000;      // failed lookups: retry next day
+const SITE_TTL_MS = 24 * 60 * 60 * 1000;         // must match collect.js
 const RDAP_TIMEOUT_MS = 8000;
 const VERDICT_WAIT_MS = 25000;
 
@@ -15,13 +16,47 @@ const loadRules = () =>
 
 const waiters = new Map();   // tabId -> [resolve]
 
+const CONTENT_FILES = ["content/markets.js", "content/detectors.js", "content/collect.js"];
+
+// Automatic scanning is opt-in: content scripts are registered only while the optional
+// https://*/* permission is granted. Otherwise pages are read via activeTab from the popup.
+const AUTO_SCAN = { origins: ["https://*/*"] };
+const AUTO_SCRIPT_ID = "dropcheck-auto";
+
+async function syncAutoScan() {
+  const enabled = await chrome.permissions.contains(AUTO_SCAN);
+  const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [AUTO_SCRIPT_ID] });
+  const script = { id: AUTO_SCRIPT_ID, matches: AUTO_SCAN.origins, js: CONTENT_FILES, runAt: "document_idle" };
+  if (enabled && registered.length) await chrome.scripting.updateContentScripts([script]);
+  else if (enabled) await chrome.scripting.registerContentScripts([script]);
+  else if (registered.length) await chrome.scripting.unregisterContentScripts({ ids: [AUTO_SCRIPT_ID] });
+}
+// Serialized: two overlapping runs would both try to register the same script id.
+let autoScanQueue = Promise.resolve();
+const queueAutoScanSync = () => {
+  autoScanQueue = autoScanQueue.then(syncAutoScan).catch(err => console.error("DropCheck auto-scan:", err));
+};
+chrome.runtime.onInstalled.addListener(queueAutoScanSync);
+chrome.runtime.onStartup.addListener(queueAutoScanSync);
+chrome.permissions.onAdded.addListener(queueAutoScanSync);
+chrome.permissions.onRemoved.addListener(queueAutoScanSync);
+
+const EXTENSION_ORIGIN = chrome.runtime.getURL("");
+
+// Host and URL come from the sender, never the payload, so one site cannot write
+// another site's verdict. Only the popup (no sender.tab) may read verdicts.
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg?.type === "PAGE_SIGNALS" && sender.tab?.id != null) {
-    handleSignals(sender.tab.id, msg.payload)
+  if (sender.id !== chrome.runtime.id) return false;
+  if (msg?.type === "PAGE_SIGNALS" && sender.tab?.id != null && sender.frameId === 0) {
+    let page;
+    try { page = new URL(sender.url || sender.tab.url); } catch { return false; }
+    if (page.protocol !== "https:") return false;
+    handleSignals(sender.tab.id, page, msg.payload)
       .then(() => sendResponse({ ok: true }), err => sendResponse({ ok: false, error: String(err) }));
     return true;
   }
-  if (msg?.type === "GET_VERDICT") {
+  if (msg?.type === "GET_VERDICT" && !sender.tab && sender.url?.startsWith(EXTENSION_ORIGIN)
+      && Number.isInteger(msg.tabId)) {
     getVerdict(msg.tabId)
       .then(sendResponse, err => sendResponse({ error: String(err) }));
     return true;
@@ -38,13 +73,38 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
 });
 chrome.tabs.onRemoved.addListener(tabId => chrome.storage.session.remove(`tab:${tabId}`));
 
-async function handleSignals(tabId, payload) {
+// Expired cache entries are deleted so storage does not become a browsing history.
+const PRUNE_ALARM = "prune-cache";
+const schedulePrune = () => {
+  chrome.alarms.create(PRUNE_ALARM, { periodInMinutes: 360 });
+  pruneLocal();
+};
+chrome.runtime.onInstalled.addListener(schedulePrune);
+chrome.runtime.onStartup.addListener(schedulePrune);
+chrome.alarms.onAlarm.addListener(alarm => { if (alarm.name === PRUNE_ALARM) pruneLocal(); });
+
+async function pruneLocal() {
+  const all = await chrome.storage.local.get(null);
+  const now = Date.now();
+  const stale = Object.entries(all).filter(([key, v]) => {
+    if (key.startsWith("site:")) return !(now - v?.at < SITE_TTL_MS);
+    if (key.startsWith("age:")) return !(now - v?.fetchedAt < (v?.createdAt ? AGE_TTL_MS : AGE_FAIL_TTL_MS));
+    return false;
+  }).map(([key]) => key);
+  if (stale.length) await chrome.storage.local.remove(stale);
+}
+
+async function handleSignals(tabId, page, payload) {
   const rules = await loadRules();
-  const signals = { ...payload };
-  if (signals.isStore) signals.domain = await lookupDomain(D.registrableDomain(signals.host));
+  const host = page.hostname;
+  const signals = payload?.isStore
+    ? { ...payload, host, url: page.href }
+    : { v: 1, isStore: false };
+  if (signals.isStore) signals.domain = await lookupDomain(D.registrableDomain(host));
   const verdict = scoreSignals(signals, rules);
-  const entry = { at: Date.now(), url: signals.url, host: signals.host, signals, verdict };
-  await chrome.storage.session.set({ [`tab:${tabId}`]: entry, [`host:${signals.host}`]: entry });
+  const entry = { at: Date.now(), host, signals, verdict };
+  if (signals.isStore) entry.url = page.href;
+  await chrome.storage.session.set({ [`tab:${tabId}`]: entry, [`host:${host}`]: entry });
   setBadge(tabId, verdict.band);
   for (const resolve of waiters.get(tabId) || []) resolve(entry);
   waiters.delete(tabId);
@@ -67,10 +127,7 @@ async function getVerdict(tabId) {
     waiters.set(tabId, [...(waiters.get(tabId) || []), resolve]);
   });
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ["content/markets.js", "content/detectors.js", "content/collect.js"]
-    });
+    await chrome.scripting.executeScript({ target: { tabId }, files: CONTENT_FILES });
   } catch (err) {
     waiters.delete(tabId);
     return { error: "unsupported", detail: String(err) };

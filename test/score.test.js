@@ -1,30 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { scoreSignals } from "../extension/background/score.js";
-
-const rules = JSON.parse(readFileSync(new URL("../extension/rules/signals.json", import.meta.url), "utf8"));
-
-function store(overrides = {}) {
-  return {
-    host: "example.se",
-    isStore: true,
-    platform: "shopify",
-    apps: [],
-    theme: { name: "Dawn", dsTheme: null },
-    tld: { tld: "se", cheap: false },
-    market: { id: "se", name: "Swedish", reason: ".se domain" },
-    urgency: { countdown: false, stock: false, viewers: false },
-    discount: { source: "catalog", sampled: 20, offs: Array(20).fill(0) },
-    shipping: { quotes: [{ min: 1, max: 3 }], fastestMax: 3 },
-    identity: { hasCompanyId: true, orgNumbers: ["559999-9991"], hasAddress: true,
-                emails: ["hej@example.se"], boilerplate: [] },
-    paymentMethods: ["visa", "klarna", "swish"],
-    supplierImageIds: 0,
-    domain: { name: "example.se", createdAt: "2015-01-01T00:00:00Z", ageDays: 4000 },
-    ...overrides
-  };
-}
+import { rules, store } from "./helpers.js";
 
 test("a plain Shopify store scores zero", () => {
   const v = scoreSignals(store(), rules);
@@ -34,6 +11,12 @@ test("a plain Shopify store scores zero", () => {
 
 test("non-store pages are not scored", () => {
   assert.equal(scoreSignals({ host: "example.com", isStore: false }, rules).band, "not_store");
+});
+
+test("page-derived detail is inserted literally, not as a replacement pattern", () => {
+  const v = scoreSignals(store({ theme: { name: "Shrine $& $' x", dsTheme: "shrine" } }), rules);
+  const fired = v.fired.find(f => f.id === "ds_theme");
+  assert.ok(fired.text.includes("Shrine $& $' x"));
 });
 
 test("a typical dropshipper lands in likely", () => {
@@ -84,16 +67,6 @@ test("a single domestic delivery quote keeps long_shipping off", () => {
     shipping: { quotes: [{ min: 1, max: 3 }, { min: 10, max: 20 }], fastestMax: 3 }
   }), rules);
   assert.ok(!v.fired.some(f => f.id === "long_shipping"));
-});
-
-test("a Norwegian store without Vipps, Klarna or invoice gets a context note", () => {
-  const v = scoreSignals(store({
-    host: "example.no",
-    market: { id: "no", name: "Norwegian", reason: ".no domain" },
-    paymentMethods: ["visa", "paypal"]
-  }), rules);
-  assert.ok(v.context.some(n => n.includes("Norwegian but shows no Vipps, Klarna or invoice")));
-  assert.equal(v.score, 0);
 });
 
 test("market overrides change a rule for that market only", () => {

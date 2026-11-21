@@ -48,7 +48,7 @@ const TESTS = {
     const sh = s.shipping;
     if (!sh || sh.fastestMax == null || sh.fastestMax < p.minDays) return null;
     const q = sh.quotes.find(x => x.max === sh.fastestMax) || { min: sh.fastestMax, max: sh.fastestMax };
-    return q.min === q.max ? `${q.max} days` : `${q.min}–${q.max} days`;
+    return q.min === q.max ? `${q.max} days` : `${q.min}-${q.max} days`;
   },
   fake_urgency(s) {
     const u = s.urgency || {};
@@ -138,7 +138,8 @@ export function scoreSignals(signals, config) {
       id: rule.id,
       category: rule.category,
       weight: rule.weight,
-      text: rule.text.replace("{detail}", detail)
+      // Function form: detail is page text and may contain "$&".
+      text: rule.text.replace("{detail}", () => detail)
     });
   }
 

@@ -10,9 +10,13 @@ const SITE_TTL_MS = 24 * 60 * 60 * 1000;         // must match collect.js
 const RDAP_TIMEOUT_MS = 8000;
 const VERDICT_WAIT_MS = 25000;
 
+// A failed load is not cached, so the next signal retries instead of failing until the
+// worker restarts.
 let rulesPromise = null;
 const loadRules = () =>
-  (rulesPromise ??= fetch(chrome.runtime.getURL("rules/signals.json")).then(r => r.json()));
+  (rulesPromise ??= fetch(chrome.runtime.getURL("rules/signals.json"))
+    .then(r => r.json())
+    .catch(err => { rulesPromise = null; throw err; }));
 
 const waiters = new Map();   // tabId -> [resolve]
 

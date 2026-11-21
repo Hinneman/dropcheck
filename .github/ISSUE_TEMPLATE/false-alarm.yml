@@ -57,6 +57,6 @@ body:
     attributes:
       label: DropCheck version
       description: Shown on chrome://extensions under DropCheck.
-      placeholder: "0.5.0"
+      placeholder: "0.6.0"
     validations:
       required: true

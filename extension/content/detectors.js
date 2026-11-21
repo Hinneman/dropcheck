@@ -11,17 +11,22 @@
 
   // ---------- Technical ----------
 
-  const APP_SIGNATURES = {
-    dsers:    ["dsers", "dser-"],
-    cj:       ["cjdropshipping", "cjapp"],
-    zendrop:  ["zendrop"],
-    autods:   ["autods"],
-    spocket:  ["spocket"],
-    oberlo:   ["oberlo"],
-    printful: ["printful"],
-    vitals:   ["vitals.co", "appsolve"],   // bundled app suite, very common
-    loox:     ["loox.io"],
-    judgeme:  ["judge.me"]
+  // Shopify apps found in the code markup. "supply" apps import marketplace products and
+  // are scored. "context" apps are shown, never scored: Printful is print-on-demand
+  // (used by many honest brands), the others are review and conversion apps used by
+  // every kind of shop.
+  const APPS = {
+    dsers:    { label: "DSers",           role: "supply",  signatures: ["dsers", "dser-"] },
+    cj:       { label: "CJ Dropshipping", role: "supply",  signatures: ["cjdropshipping", "cjapp"] },
+    zendrop:  { label: "Zendrop",         role: "supply",  signatures: ["zendrop"] },
+    autods:   { label: "AutoDS",          role: "supply",  signatures: ["autods"] },
+    spocket:  { label: "Spocket",         role: "supply",  signatures: ["spocket"] },
+    oberlo:   { label: "Oberlo",          role: "supply",  signatures: ["oberlo"] },
+    printful: { label: "Printful",        role: "context", signatures: ["printful"] },
+    // Bundled app suite, very common.
+    vitals:   { label: "Vitals",          role: "context", signatures: ["vitals.co", "appsolve"] },
+    loox:     { label: "Loox",            role: "context", signatures: ["loox.io"] },
+    judgeme:  { label: "Judge.me",        role: "context", signatures: ["judge.me"] }
   };
 
   // Themes used almost exclusively by dropshippers. Matched against the theme name.
@@ -45,8 +50,8 @@
   // visible text, so a blog post that mentions an app does not count as using it.
   function detectApps(codeMarkup) {
     const lower = codeMarkup.toLowerCase();
-    return Object.keys(APP_SIGNATURES).filter(app =>
-      APP_SIGNATURES[app].some(sig => lower.includes(sig)));
+    return Object.keys(APPS).filter(app =>
+      APPS[app].signatures.some(sig => lower.includes(sig)));
   }
 
   function detectTheme(markup) {
@@ -426,6 +431,7 @@
     return short.length >= 4 ? long.includes(short) : x === y;
   }
 
+  /** @type {[RegExp, string][]} */
   const BOILERPLATE = [
     [/\[(?:company|store|shop|business)\s*name\]/i, 'placeholder "[Company Name]"'],
     [/\[your\s+(?:company|store|shop|business|email|address|website)[^\]]{0,30}\]/i, 'placeholder "[Your ...]"'],
@@ -469,8 +475,39 @@
     return Math.round((1 - p / c) * 100) / 100;
   }
 
+  // ---------- Store recognition ----------
+
+  // A control whose whole visible text names the cart, with an optional item count:
+  // "Cart (0)", "Varukorg 2", "Handlekurv". "Bag" names categories too ("Bags"), so it
+  // counts only on a button or with a count.
+  const CART_LABEL_RE = /^(?:shopping )?(cart|basket|bag|varukorg|kundvagn|handlekurv|handlevogn|warenkorb)\s*(\(?\d+\)?)?$/i;
+
+  function isCartLabel(text, isButton) {
+    const m = String(text || "").replace(/\s+/g, " ").trim().match(CART_LABEL_RE);
+    if (!m) return false;
+    return m[1].toLowerCase() !== "bag" || isButton || Boolean(m[2]);
+  }
+
+  // A link that puts a product in the cart, for shops on their own platform:
+  // "/checkout/?action=additem&id=12", "?add-to-cart=12".
+  const ADD_TO_CART_HREF_RE = /(?:[?&/](?:action=)?add-?item\b|add[-_]?to[-_]?cart)/i;
+
+  function isAddToCartHref(href) {
+    return ADD_TO_CART_HREF_RE.test(String(href || ""));
+  }
+
+  // A buy button's whole visible text, in the supported markets' languages.
+  const BUY_LABEL_RE = new RegExp("^(?:add to (?:cart|bag|basket)|buy(?: now)?|" +
+    "köp(?: nu)?|lägg i (?:varukorg|varukorgen|kundvagn|kundvagnen)|" +
+    "kjøp(?: nå)?|legg i (?:handlekurv|handlekurven|handlevogn|handlevognen)|" +
+    "in den warenkorb|(?:jetzt )?kaufen)$", "i");
+
+  function isBuyLabel(text) {
+    return BUY_LABEL_RE.test(String(text || "").replace(/\s+/g, " ").trim());
+  }
+
   globalThis.DropCheckDetectors = {
-    APP_SIGNATURES, DS_THEMES,
+    APPS, DS_THEMES,
     detectPlatform, detectApps, detectTheme, detectPaymentMethods, countSupplierImageIds,
     countSupplierTags, countImportSourceTags, countAiImages,
     registrableDomain, tldInfo,
@@ -478,6 +515,7 @@
     extractShippingQuotes, detectReturnsAbroad, detectImportCharges,
     findCompanyIds, detectAddress, extractPhoneCodes, phoneCountry,
     detectMarket, extractEmails, isFreemail, isServiceEmailDomain, sameBrand, detectBoilerplate,
-    parsePrices, toNumber, discountOff
+    parsePrices, toNumber, discountOff,
+    isCartLabel, isAddToCartHref, isBuyLabel
   };
 })();

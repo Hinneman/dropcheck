@@ -82,6 +82,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 [hidden] { display: none !important; }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.images button:focus-visible { outline-offset: 1px; }
+
 #show-images {
   font: inherit;
   padding: 5px 10px;

@@ -6,8 +6,8 @@
 // in chrome.storage.local so browsing a store does not refetch them on every page.
 (() => {
   const D = globalThis.DropCheckDetectors;
+  const { DAY_MS, SITE_TTL_MS } = globalThis.DropCheckConfig;
   const SITE_FACTS_VERSION = 4;   // bump when site-level detectors or page choice change
-  const SITE_TTL_MS = 24 * 60 * 60 * 1000;
   const FETCH_TIMEOUT_MS = 6000;
   const STORE_WAIT_MS = 8000;     // how long a late-rendering page gets to look like a store
   const STORE_POLL_MS = 1000;
@@ -15,8 +15,12 @@
   // whole path segment or button label, so it does not hit words that merely contain it.
   // Declared up here: collect() starts below, before later declarations are initialized.
   const CART_WORDS = ["varukorg", "kundvagn", "kassa", "handlekurv", "handlevogn", "warenkorb", "basket"];
-  const PRODUCT_PATH = /\/(products?|produkt)\/[^/?#]/i;
+  // Path segments of product pages, matched as "/<segment>/".
+  const PRODUCT_SEGMENTS = ["products", "product", "produkt"];
+  const PRODUCT_PATH = new RegExp(`/(${PRODUCT_SEGMENTS.join("|")})/[^/?#]`, "i");
+  const PRODUCT_LINKS = PRODUCT_SEGMENTS.map(s => `a[href*="/${s}/"]`).join(", ");
   const MIN_PRODUCT_LINKS = 3;
+  const MIN_BUY_CONTROLS = 2;     // "Köp" buttons or add-to-cart links
 
   const send = payload =>
     chrome.runtime.sendMessage({ type: "PAGE_SIGNALS", payload }).catch(() => {});
@@ -51,9 +55,15 @@
       budget -= chunk.length;
       if (budget < 0) break;
     }
-    for (const l of document.querySelectorAll("link[href]")) parts.push(l.href);
-    for (const f of document.querySelectorAll("iframe[src]")) parts.push(f.src);
-    for (const m of document.querySelectorAll("meta[name=generator]")) parts.push(`name="generator" ${m.content}`);
+    for (const l of /** @type {NodeListOf<HTMLLinkElement>} */ (document.querySelectorAll("link[href]"))) {
+      parts.push(l.href);
+    }
+    for (const f of /** @type {NodeListOf<HTMLIFrameElement>} */ (document.querySelectorAll("iframe[src]"))) {
+      parts.push(f.src);
+    }
+    for (const m of /** @type {NodeListOf<HTMLMetaElement>} */ (document.querySelectorAll("meta[name=generator]"))) {
+      parts.push(`name="generator" ${m.content}`);
+    }
     return parts.join("\n");
   }
 
@@ -70,8 +80,9 @@
     return parts.join("\n");
   }
 
-  function mailtoText() {
-    return [...document.querySelectorAll('a[href^="mailto:"]')]
+  // Addresses of mailto: links in a document, one per line.
+  function mailtoText(root) {
+    return [...root.querySelectorAll('a[href^="mailto:"]')]
       .map(a => a.getAttribute("href").slice(7).split("?")[0]).join("\n");
   }
 
@@ -107,13 +118,32 @@
                    ...CART_WORDS.map(w => `a[href*="${w}" i]`)];
     // Single-page stores often open the cart in a drawer from a button with no href.
     const buttons = ["cart", ...CART_WORDS].map(w => `button[aria-label*="${w}" i]`);
-    return !!document.querySelector([...links, ...buttons].join(", "));
+    if (document.querySelector([...links, ...buttons].join(", "))) return true;
+    // Some only say so in their text: a "Cart (0)" button on a shop's own platform.
+    return [...document.querySelectorAll("button, a, [role=button]")].some(el =>
+      el.textContent.length <= 40 && D.isCartLabel(el.textContent, el.tagName !== "A"));
   }
+
+  // Shops on their own platform without a cart link: several "Köp" or "Add to cart"
+  // controls, or links that add an item ("/checkout/?action=additem&id=12"). One is not
+  // enough: a news site may have a single "Buy" button for a subscription.
+  function hasBuyControls() {
+    let n = 0;
+    for (const el of document.querySelectorAll("button, a, [role=button], input[type=submit]")) {
+      const label = el instanceof HTMLInputElement ? el.value : el.textContent;
+      if (D.isAddToCartHref(el.getAttribute("href")) || (label.length <= 40 && D.isBuyLabel(label))) n++;
+      if (n >= MIN_BUY_CONTROLS) return true;
+    }
+    return false;
+  }
+
+  const linksWithHref = () =>
+    /** @type {NodeListOf<HTMLAnchorElement>} */ (document.querySelectorAll("a[href]"));
 
   // Catalog pages link to several of the store's own product pages.
   function hasProductLinks() {
     const paths = new Set();
-    for (const a of document.querySelectorAll("a[href]")) {
+    for (const a of linksWithHref()) {
       let u;
       try { u = new URL(a.href); } catch { continue; }
       if (u.origin === location.origin && PRODUCT_PATH.test(u.pathname)) paths.add(u.pathname);
@@ -127,7 +157,7 @@
     const types = ld.flatMap(o => [].concat(o["@type"] || []));
     if (types.some(t => /^(Product|Offer|AggregateOffer)$/.test(t))) return true;
     if (document.querySelector('meta[property="og:type"][content*="product" i]')) return true;
-    return hasCart() || hasProductLinks();
+    return hasCart() || hasProductLinks() || hasBuyControls();
   }
 
   function absolute(url) {
@@ -139,14 +169,14 @@
 
   function topProductImageUrls(n, ld) {
     const urls = [];
-    const og = document.querySelector('meta[property="og:image"]');
+    const og = /** @type {HTMLMetaElement | null} */ (document.querySelector('meta[property="og:image"]'));
     if (og) urls.push(og.content);
     for (const o of ld) {
       if ([].concat(o["@type"] || []).includes("Product")) {
         for (const img of [].concat(o.image || [])) urls.push(typeof img === "string" ? img : img?.url);
       }
     }
-    const imgs = [...document.querySelectorAll("main img, img")]
+    const imgs = [...document.querySelectorAll("img")]
       .filter(img => img.naturalWidth >= 300 && !/logo|icon|badge|payment/i.test(img.src + img.alt))
       .sort((a, b) => b.naturalWidth * b.naturalHeight - a.naturalWidth * a.naturalHeight);
     for (const img of imgs.slice(0, 6)) urls.push(img.currentSrc || img.src);
@@ -165,9 +195,10 @@
 
   // Product cards found via product links: share of cards shown with a deep discount.
   function domDiscount() {
-    const links = document.querySelectorAll('a[href*="/products/"], a[href*="/product/"], a[href*="/produkt/"]');
+    const links = /** @type {NodeListOf<HTMLAnchorElement>} */ (document.querySelectorAll(PRODUCT_LINKS));
     const cards = new Set();
     for (const a of links) {
+      /** @type {HTMLElement | null} */
       let el = a;
       for (let i = 0; i < 6 && el && el !== document.body; i++, el = el.parentElement) {
         if (D.parsePrices(el.innerText || "").length) { cards.add(el); break; }
@@ -202,7 +233,7 @@
 
   function policyPaths(platform) {
     const paths = platform === "shopify" ? [...SHOPIFY_PATHS] : [];
-    for (const a of document.querySelectorAll("a[href]")) {
+    for (const a of linksWithHref()) {
       let u;
       try { u = new URL(a.href); } catch { continue; }
       if (u.origin !== location.origin || u.pathname === location.pathname) continue;
@@ -234,8 +265,7 @@
       doc.querySelectorAll("script, style, noscript, svg").forEach(el => el.remove());
       doc.querySelectorAll("br, p, div, li, h1, h2, h3, h4, h5, h6, tr, section, footer")
         .forEach(el => el.after("\n"));
-      const mailtos = [...doc.querySelectorAll('a[href^="mailto:"]')]
-        .map(a => a.getAttribute("href").slice(7).split("?")[0]).join("\n");
+      const mailtos = mailtoText(doc);
       const text = (doc.body ? doc.body.textContent : "")
         .replace(/[ \t\u00a0]+/g, " ").replace(/\n\s*\n+/g, "\n");
       return (text.slice(0, 40000) + "\n" + mailtos);
@@ -284,7 +314,9 @@
   async function siteFacts(platform) {
     const key = "site:" + location.hostname;
     try {
-      const cached = (await chrome.storage.local.get(key))[key];
+      /** @type {Record<string, any>} */
+      const stored = await chrome.storage.local.get(key);
+      const cached = stored[key];
       if (cached && cached.v === SITE_FACTS_VERSION && Date.now() - cached.at < SITE_TTL_MS) return cached;
     } catch { /* storage unavailable: just fetch */ }
 
@@ -340,7 +372,7 @@
 
     const site = await siteFacts(platform);
     const pageCompany = D.findCompanyIds(text);
-    const emails = [...new Set([...D.extractEmails(text + "\n" + mailtoText()), ...site.emails])];
+    const emails = [...new Set([...D.extractEmails(text + "\n" + mailtoText(document)), ...site.emails])];
     const shippingQuotes = [...D.extractShippingQuotes(text), ...site.shippingQuotes];
     const pageDiscount = domDiscount();
     const catalog = site.catalog;
@@ -388,7 +420,7 @@
         oldestProduct: catalog.oldestProduct,
         // From the first 250 products only: a larger catalog may be older.
         oldestProductDays: catalog.oldestProduct
-          ? Math.floor((Date.now() - Date.parse(catalog.oldestProduct)) / 86400000) : null,
+          ? Math.floor((Date.now() - Date.parse(catalog.oldestProduct)) / DAY_MS) : null,
         importSourceTags: catalog.importSourceTags || 0,
         productTypes: catalog.productTypes,
         typeSample: catalog.typeSample,

@@ -12,6 +12,8 @@
 //
 // Any CSV works as long as one row has a "URL" and a "Label" column header, so the
 // spreadsheet export can be passed as is. Rows without both values are skipped.
+// Labels starting with "Legit" count toward the false positive rate; "No store detected"
+// marks pages that are not shops and must come out as not_store.
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -180,6 +182,14 @@ function summarise(results) {
     const scored = sum("n") - sum("error") - sum("not_store");
     console.log(`\nFalse positive rate (legitimate stores in "Likely reseller"): ` +
       `${likely}/${scored} = ${pctOf(likely, scored)}   target: under 10 %`);
+  }
+  // Pages that are not shops (news, agencies, encyclopedias): store recognition must
+  // leave them alone, so any band other than not_store is a false store detection.
+  const nonStores = [...byLabel.values()].filter(s => s.label.toLowerCase().startsWith("no store"));
+  if (nonStores.length) {
+    const n = nonStores.reduce((t, s) => t + s.n - s.error, 0);
+    const wrong = nonStores.reduce((t, s) => t + s.n - s.error - s.not_store, 0);
+    console.log(`Pages that are not shops but were scored as shops: ${wrong}/${n} = ${pctOf(wrong, n)}   target: 0`);
   }
 }
 

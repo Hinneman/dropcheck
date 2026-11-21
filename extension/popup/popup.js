@@ -1,4 +1,5 @@
-import { BAND_LABELS } from "../background/score.js";
+import "../shared/config.js";
+import { BAND_LABELS, NO_REGISTRATION_DATE_TLDS, formatTldList } from "../background/score.js";
 
 const $ = id => document.getElementById(id);
 
@@ -36,7 +37,7 @@ const CATEGORY_LABELS = {
 function firedByCategory(verdict) {
   const order = [...new Set(verdict.fired.map(f => f.category))];
   return order.map(cat => {
-    const { raw, counted, cap } = verdict.categories[cat];
+    const { raw, counted } = verdict.categories[cat];
     const group = document.createElement("li");
     group.className = "category";
 
@@ -62,7 +63,9 @@ function firedByCategory(verdict) {
 
 function render(entry) {
   const { verdict, signals } = entry;
-  $("status").hidden = true;
+  // The status stays in the page, visually hidden, so screen readers announce the result.
+  $("status").textContent = `Result: ${BAND_LABELS[verdict.band]}.`;
+  $("status").classList.add("visually-hidden");
   $("result").hidden = false;
 
   $("verdict").dataset.band = verdict.band;
@@ -90,9 +93,11 @@ function render(entry) {
 }
 
 function showImages(images) {
-  $("images").replaceChildren(...images.map(url => {
+  $("images").replaceChildren(...images.map((url, i) => {
     const btn = document.createElement("button");
+    btn.type = "button";
     btn.title = "Search this image with Google Lens";
+    btn.setAttribute("aria-label", `Search product image ${i + 1} of ${images.length} with Google Lens`);
     const img = document.createElement("img");
     img.src = url;
     img.alt = "";
@@ -106,10 +111,10 @@ function showImages(images) {
 
 // Only toggles the permission; the worker reacts to it. The permission dialog can close
 // the popup before request() resolves.
-const AUTO_SCAN = { origins: ["https://*/*"] };
+const AUTO_SCAN = { origins: [...globalThis.DropCheckConfig.AUTO_SCAN_ORIGINS] };
 
 async function setupAutoScan() {
-  const box = $("auto-scan");
+  const box = /** @type {HTMLInputElement} */ ($("auto-scan"));
   box.checked = await chrome.permissions.contains(AUTO_SCAN);
   box.addEventListener("change", async () => {
     const granted = box.checked
@@ -120,7 +125,8 @@ async function setupAutoScan() {
 }
 
 async function main() {
-  setupAutoScan().catch(() => {});
+  $("no-lookup-tlds").textContent = formatTldList(NO_REGISTRATION_DATE_TLDS);
+  setupAutoScan().catch(err => console.error("DropCheck auto-scan setting:", err));
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   let host = "";
   try { host = new URL(tab.url).hostname; } catch { /* no URL access for this tab */ }

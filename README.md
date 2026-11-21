@@ -56,10 +56,12 @@ and German. Stores in other countries are scored with the generic patterns only.
 ```
 extension/                 load this folder in Chrome
   manifest.json
+  shared/config.js         constants shared by content scripts, worker and popup
   content/markets.js       market profiles (SE, NO) and keyword lists per language
   content/detectors.js     pure detector functions (unit-tested)
   content/collect.js       reads the page, builds the signal object
   background/score.js      rules -> verdict (pure, shared with Node)
+  background/sanitize.js   bounds the signal object a content script sends (pure)
   background/worker.js     service worker: domain age (RDAP), scoring, cache, badge
   rules/signals.json       weights, category caps, band thresholds
   popup/                   verdict, fired rules, context, "Find the source",
@@ -85,11 +87,17 @@ test/                      node:test unit tests; se.test.js and no.test.js hold 
   The popup's "Check shops automatically" box requests the optional `https://*/*`
   permission; while it is granted, the worker registers the content scripts on every
   https page and the badge warns without opening the popup. Unticking it removes both.
-- **Unit tests:** `npm test` (no dependencies needed).
+- **Unit tests:** `npm test` (no dependencies needed). They also check that the docs
+  name the TLDs that are not looked up, and that the version matches everywhere.
+- **Lint and type check:** `npm install` once, then `npm run lint` and `npm run typecheck`
+  (JSDoc-checked JavaScript, no build step; declarations for it live in types/). CI runs
+  all three.
 - **Evaluation:** `npm install` once, then `npm run eval -- path/to/stores.csv`. Any CSV
   works if one row has "URL" and "Label" column headers; labels starting with "Legit"
-  count toward the false positive rate. The labeled dataset is kept out of the repo
-  because it names real stores; without an argument the harness reads `docs/dataset.csv`.
+  count toward the false positive rate, and "No store detected" marks pages that are not
+  shops (news, agencies), which must not be scored as shops. The labeled dataset is kept
+  out of the repo because it names real stores; without an argument the harness reads
+  `docs/dataset.csv`.
   Options: `--limit N`, `--headful`, `--out file.csv`, `--concurrency N` (stores loaded at
   once, default 4; keep it low, Shopify rate-limits per IP). The harness loads a temporary copy
   of the extension with automatic scanning granted, since a headless run cannot click

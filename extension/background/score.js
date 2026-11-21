@@ -6,13 +6,9 @@ import "../content/detectors.js";
 const D = globalThis.DropCheckDetectors;
 const { MARKETS } = globalThis.DropCheckMarkets;
 
-export const SUPPLY_APPS = {
-  dsers: "DSers", cj: "CJ Dropshipping", zendrop: "Zendrop",
-  autods: "AutoDS", spocket: "Spocket", oberlo: "Oberlo"
-};
-// Shown as context, never scored: Printful is print-on-demand (used by many honest
-// brands), the others are review and conversion apps used by every kind of shop.
-const CONTEXT_APPS = { printful: "Printful", vitals: "Vitals", loox: "Loox", judgeme: "Judge.me" };
+// Detected apps by role: supply apps are scored, the others are shown as context only.
+const appsOfRole = (ids, role) =>
+  (ids || []).filter(id => Object.hasOwn(D.APPS, id) && D.APPS[id].role === role).map(id => D.APPS[id].label);
 
 export const BAND_LABELS = {
   likely: "Likely reseller",
@@ -27,9 +23,20 @@ const pct = x => `${Math.round(x * 100)} %`;
 // HTTPS (WHOIS only). .no publishes one, but Norid registers the domain anew when it
 // changes holder, so a shop that has traded for decades can show a date from last month.
 // The worker does not look these domains up, so domain_young never fires for them.
-const NO_REGISTRATION_DATE_TLDS = ["se", "dk", "de", "no"];
+// The popup, site, privacy policy, README and store listing name these TLDs in this
+// order; test/docs.test.js fails when they drift apart.
+export const NO_REGISTRATION_DATE_TLDS = Object.freeze(["se", "no", "dk", "de"]);
 const tldOf = name => name.split(".").pop();
 export const hasRegistrationDate = name => !NO_REGISTRATION_DATE_TLDS.includes(tldOf(name));
+
+// ".se, .no, .dk and .de"
+export function formatTldList(tlds, and = "and") {
+  const dotted = tlds.map(t => `.${t}`);
+  return dotted.length < 2 ? dotted.join("") : `${dotted.slice(0, -1).join(", ")} ${and} ${dotted.at(-1)}`;
+}
+
+// The shop's own registrable domain: the looked-up one, else derived from the host.
+const ownDomain = s => s.domain?.name || D.registrableDomain(s.host || "");
 
 function formatAge(days) {
   if (days < 60) return `${days} days ago`;
@@ -39,8 +46,8 @@ function formatAge(days) {
 // Each test returns a detail string when the rule fires, or null when it does not.
 const TESTS = {
   dropship_app(s) {
-    const hits = (s.apps || []).filter(a => a in SUPPLY_APPS);
-    return hits.length ? hits.map(a => SUPPLY_APPS[a]).join(", ") : null;
+    const hits = appsOfRole(s.apps, "supply");
+    return hits.length ? hits.join(", ") : null;
   },
   // Image file names and import-app product tags both point at a marketplace listing.
   supplier_images(s, p) {
@@ -119,7 +126,7 @@ const TESTS = {
   // An address at another brand's domain, even next to the shop's own: policy pages
   // copied from another store, or one operator running several shops.
   other_domain_email(s) {
-    const own = s.domain?.name || D.registrableDomain(s.host || "");
+    const own = ownDomain(s);
     const others = [...new Set((s.identity?.emails || []).map(e => D.registrableDomain(e.split("@")[1])))]
       .filter(d => !D.isFreemail(d) && !D.isServiceEmailDomain(d) &&
                    !D.sameBrand(d, own) && !D.sameBrand(d, s.host || own));
@@ -127,7 +134,7 @@ const TESTS = {
   },
   generic_email(s) {
     const emails = s.identity?.emails || [];
-    const own = s.domain?.name || D.registrableDomain(s.host || "");
+    const own = ownDomain(s);
     const domains = emails.map(e => e.split("@")[1]);
     if (domains.some(d => d === own || d.endsWith("." + own))) return null;
     const free = domains.filter(d => D.isFreemail(d));
@@ -143,7 +150,7 @@ const TESTS = {
 function contextNotes(s) {
   const notes = [];
   if (s.platform) notes.push(`Platform: ${s.platform}. Platform alone is not evidence and scores nothing.`);
-  const ctxApps = (s.apps || []).filter(a => a in CONTEXT_APPS).map(a => CONTEXT_APPS[a]);
+  const ctxApps = appsOfRole(s.apps, "context");
   if (ctxApps.length) notes.push(`Also loads: ${ctxApps.join(", ")}.`);
   if (s.theme?.name && !s.theme.dsTheme) notes.push(`Theme: ${s.theme.name}.`);
   if (s.domain) {
@@ -184,8 +191,8 @@ export function scoreSignals(signals, config) {
   const overrides = (signals.market && config.marketOverrides?.[signals.market.id]) || {};
 
   const candidates = [];
-  for (const base of config.rules) {
-    const rule = { ...base, ...overrides[base.id] };
+  for (const ruleDef of config.rules) {
+    const rule = { ...ruleDef, ...overrides[ruleDef.id] };
     const test = TESTS[rule.id];
     if (!test || rule.weight <= 0) continue;
     const detail = test(signals, rule.params || {});

@@ -181,3 +181,27 @@ test("discountOff", () => {
   assert.equal(D.discountOff("269.00", "899.00"), 0.7);
   assert.equal(D.discountOff("100", null), 0);
 });
+
+test("isCartLabel accepts a cart named only in its text, with an optional count", () => {
+  for (const text of ["Cart (0)", "  Varukorg 2 ", "Handlekurv", "Shopping bag", "Warenkorb(3)"]) {
+    assert.ok(D.isCartLabel(text, true), text);
+  }
+  assert.ok(D.isCartLabel("Bag (1)", false));
+  assert.ok(!D.isCartLabel("Bag", false));          // a category link, not the cart
+  assert.ok(!D.isCartLabel("Bags", true));
+  assert.ok(!D.isCartLabel("Add to cart", true));
+  assert.ok(!D.isCartLabel("Your cart is empty", true));
+});
+
+test("isAddToCartHref and isBuyLabel recognise buy controls", () => {
+  assert.ok(D.isAddToCartHref("/checkout/?action=additem&id=12"));
+  assert.ok(D.isAddToCartHref("https://www.example.se/?add-to-cart=12"));
+  assert.ok(!D.isAddToCartHref("/checkout/"));
+  assert.ok(!D.isAddToCartHref("/blog/additional-items"));
+  assert.ok(!D.isAddToCartHref(null));
+  for (const text of ["Köp", "Lägg i varukorgen", "Kjøp nå", "Legg i handlekurv", "Add to cart", "In den Warenkorb"]) {
+    assert.ok(D.isBuyLabel(text), text);
+  }
+  assert.ok(!D.isBuyLabel("Köp prenumeration för 1 kr"));
+  assert.ok(!D.isBuyLabel("Buyers guide"));
+});

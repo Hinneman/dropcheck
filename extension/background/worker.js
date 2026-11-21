@@ -1,12 +1,14 @@
 // Service worker: receives page signals, adds domain age, scores, caches the verdict.
+import "../shared/config.js";
 import "../content/markets.js";
 import "../content/detectors.js";
-import { hasRegistrationDate, scoreSignals } from "./score.js";
+import { BAND_LABELS, hasRegistrationDate, scoreSignals } from "./score.js";
+import { sanitizeSignals } from "./sanitize.js";
 
 const D = globalThis.DropCheckDetectors;
-const AGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;      // successful lookups
-const AGE_FAIL_TTL_MS = 24 * 60 * 60 * 1000;      // failed lookups: retry next day
-const SITE_TTL_MS = 24 * 60 * 60 * 1000;         // must match collect.js
+const { DAY_MS, SITE_TTL_MS, AUTO_SCAN_ORIGINS } = globalThis.DropCheckConfig;
+const AGE_TTL_MS = 30 * DAY_MS;      // successful lookups
+const AGE_FAIL_TTL_MS = DAY_MS;      // failed lookups: retry next day
 const RDAP_TIMEOUT_MS = 8000;
 const VERDICT_WAIT_MS = 25000;
 
@@ -20,16 +22,17 @@ const loadRules = () =>
 
 const waiters = new Map();   // tabId -> [resolve]
 
-const CONTENT_FILES = ["content/markets.js", "content/detectors.js", "content/collect.js"];
+const CONTENT_FILES = ["shared/config.js", "content/markets.js", "content/detectors.js", "content/collect.js"];
 
 // Automatic scanning is opt-in: content scripts are registered only while the optional
 // https://*/* permission is granted. Otherwise pages are read via activeTab from the popup.
-const AUTO_SCAN = { origins: ["https://*/*"] };
+const AUTO_SCAN = { origins: [...AUTO_SCAN_ORIGINS] };
 const AUTO_SCRIPT_ID = "dropcheck-auto";
 
 async function syncAutoScan() {
   const enabled = await chrome.permissions.contains(AUTO_SCAN);
   const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [AUTO_SCRIPT_ID] });
+  /** @type {chrome.scripting.RegisteredContentScript} */
   const script = { id: AUTO_SCRIPT_ID, matches: AUTO_SCAN.origins, js: CONTENT_FILES, runAt: "document_idle" };
   if (enabled && registered.length) await chrome.scripting.updateContentScripts([script]);
   else if (enabled) await chrome.scripting.registerContentScripts([script]);
@@ -68,26 +71,31 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return false;
 });
 
+const logError = context => err => console.error(`DropCheck ${context}:`, err);
+
 // A new page load in the tab invalidates its verdict.
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === "loading") {
-    chrome.storage.session.remove(`tab:${tabId}`);
-    chrome.action.setBadgeText({ tabId, text: "" }).catch(() => {});
+    chrome.storage.session.remove(`tab:${tabId}`).catch(logError("clear tab verdict"));
+    setBadge(tabId, null);
   }
 });
-chrome.tabs.onRemoved.addListener(tabId => chrome.storage.session.remove(`tab:${tabId}`));
+chrome.tabs.onRemoved.addListener(tabId =>
+  chrome.storage.session.remove(`tab:${tabId}`).catch(logError("clear tab verdict")));
 
 // Expired cache entries are deleted so storage does not become a browsing history.
 const PRUNE_ALARM = "prune-cache";
+const prune = () => pruneLocal().catch(logError("prune cache"));
 const schedulePrune = () => {
-  chrome.alarms.create(PRUNE_ALARM, { periodInMinutes: 360 });
-  pruneLocal();
+  chrome.alarms.create(PRUNE_ALARM, { periodInMinutes: 360 }).catch(logError("schedule prune"));
+  prune();
 };
 chrome.runtime.onInstalled.addListener(schedulePrune);
 chrome.runtime.onStartup.addListener(schedulePrune);
-chrome.alarms.onAlarm.addListener(alarm => { if (alarm.name === PRUNE_ALARM) pruneLocal(); });
+chrome.alarms.onAlarm.addListener(alarm => { if (alarm.name === PRUNE_ALARM) prune(); });
 
 async function pruneLocal() {
+  /** @type {Record<string, any>} */
   const all = await chrome.storage.local.get(null);
   const now = Date.now();
   const stale = Object.entries(all).filter(([key, v]) => {
@@ -101,8 +109,11 @@ async function pruneLocal() {
 async function handleSignals(tabId, page, payload) {
   const rules = await loadRules();
   const host = page.hostname;
-  const signals = payload?.isStore
-    ? { ...payload, host, url: page.href }
+  // The payload is shaped by page content: keep only known fields, bounded in size.
+  const clean = sanitizeSignals(payload);
+  /** @type {Record<string, any>} */
+  const signals = clean.isStore
+    ? { ...clean, host, url: page.href }
     : { v: 1, isStore: false };
   if (signals.isStore) signals.domain = await lookupDomain(D.registrableDomain(host));
   const verdict = scoreSignals(signals, rules);
@@ -115,37 +126,59 @@ async function handleSignals(tabId, page, payload) {
 }
 
 // The check mark lives in the badge, not the icon, so it only shows once a store
-// has actually been checked. Non-store pages get no badge.
+// has actually been checked. Non-store pages get no badge. The badge is not read out
+// by screen readers, so the band also goes into the button's title (its accessible name).
+// Errors are ignored: the tab may have closed in the meantime.
+const BADGES = {
+  likely: ["!", "#b42318"],
+  mixed: ["?", "#b54708"],
+  none: ["✓", "#16a34a"]
+};
 function setBadge(tabId, band) {
-  const badge = {
-    likely: ["!", "#b42318"],
-    mixed: ["?", "#b54708"],
-    none: ["✓", "#16a34a"]
-  }[band];
-  chrome.action.setBadgeText({ tabId, text: badge ? badge[0] : "" }).catch(() => {});
-  if (badge) chrome.action.setBadgeBackgroundColor({ tabId, color: badge[1] }).catch(() => {});
+  const badge = BADGES[band];
+  const ignore = () => {};
+  chrome.action.setBadgeText({ tabId, text: badge ? badge[0] : "" }).catch(ignore);
+  chrome.action.setTitle({ tabId, title: badge ? `DropCheck: ${BAND_LABELS[band]}` : "DropCheck" }).catch(ignore);
+  if (badge) chrome.action.setBadgeBackgroundColor({ tabId, color: badge[1] }).catch(ignore);
 }
 
 async function getVerdict(tabId) {
   const key = `tab:${tabId}`;
-  const stored = (await chrome.storage.session.get(key))[key];
+  /** @type {Record<string, any>} */
+  const session = await chrome.storage.session.get(key);
+  const stored = session[key];
   // "No shop" is re-checked: an automatic scan may have run before the page rendered.
   if (stored && stored.verdict?.band !== "not_store") return stored;
 
   // No verdict yet: the page loaded before install, or the scan is still running.
   // Inject the collector (activeTab covers this when the popup was opened).
+  let resolveWaiter;
   const pending = new Promise(resolve => {
+    resolveWaiter = resolve;
     waiters.set(tabId, [...(waiters.get(tabId) || []), resolve]);
   });
+  // Removes only this call's waiter: another popup may be waiting on the same tab.
+  const dropWaiter = () => {
+    const rest = (waiters.get(tabId) || []).filter(w => w !== resolveWaiter);
+    if (rest.length) waiters.set(tabId, rest);
+    else waiters.delete(tabId);
+  };
   try {
     await chrome.scripting.executeScript({ target: { tabId }, files: CONTENT_FILES });
   } catch (err) {
-    waiters.delete(tabId);
+    dropWaiter();
     return stored || { error: "unsupported", detail: String(err) };
   }
-  const timeout = new Promise(resolve =>
-    setTimeout(() => resolve(stored || { error: "timeout" }), VERDICT_WAIT_MS));
-  return Promise.race([pending, timeout]);
+  let timer;
+  const timeout = new Promise(resolve => {
+    timer = setTimeout(() => resolve(stored || { error: "timeout" }), VERDICT_WAIT_MS);
+  });
+  try {
+    return await Promise.race([pending, timeout]);
+  } finally {
+    clearTimeout(timer);
+    dropWaiter();
+  }
 }
 
 // Domain registration date via RDAP (the JSON successor to WHOIS). Never required:
@@ -154,17 +187,17 @@ async function getVerdict(tabId) {
 async function lookupDomain(name) {
   if (!hasRegistrationDate(name)) return withAge({ name, createdAt: null });
   const key = `age:${name}`;
-  const cached = (await chrome.storage.local.get(key))[key];
+  /** @type {Record<string, any>} */
+  const local = await chrome.storage.local.get(key);
+  const cached = local[key];
   if (cached) {
     const ttl = cached.createdAt ? AGE_TTL_MS : AGE_FAIL_TTL_MS;
     if (Date.now() - cached.fetchedAt < ttl) return withAge(cached);
   }
   let createdAt = null;
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), RDAP_TIMEOUT_MS);
-    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(name)}`, { signal: ctrl.signal });
-    clearTimeout(timer);
+    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(name)}`,
+      { signal: AbortSignal.timeout(RDAP_TIMEOUT_MS) });
     if (res.ok) {
       const data = await res.json();
       const ev = (data.events || []).find(e => e.eventAction === "registration");
@@ -177,6 +210,6 @@ async function lookupDomain(name) {
 }
 
 function withAge({ name, createdAt }) {
-  const ageDays = createdAt ? Math.floor((Date.now() - Date.parse(createdAt)) / 86400000) : null;
+  const ageDays = createdAt ? Math.floor((Date.now() - Date.parse(createdAt)) / DAY_MS) : null;
   return { name, createdAt, ageDays };
 }

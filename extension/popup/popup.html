@@ -11,7 +11,7 @@
     <p id="host" class="muted"></p>
   </header>
 
-  <p id="status" class="muted">Scanning...</p>
+  <p id="status" class="muted" role="status">Scanning...</p>
 
   <main id="result" hidden>
     <section id="verdict" class="verdict">
@@ -39,12 +39,12 @@
     </section>
   </main>
 
-  <section class="settings">
+  <section class="settings" aria-label="Settings">
     <label>
-      <input id="auto-scan" type="checkbox">
+      <input id="auto-scan" type="checkbox" aria-describedby="auto-scan-help">
       Check shops automatically as I browse
     </label>
-    <p class="muted small">Shows a warning badge without opening DropCheck. Needs permission
+    <p id="auto-scan-help" class="muted small">Shows a warning badge without opening DropCheck. Needs permission
       to read every https:// page you visit; the reading stays in your browser. Off: pages
       are read only when you open this popup.</p>
   </section>
@@ -52,8 +52,9 @@
   <footer class="muted small">
     Observations about this page, not a judgment of the company. Analysis runs in your
     browser; only the domain name is sent to rdap.org, which forwards the lookup to the
-    domain's registry, to find its registration date. .se, .dk and .de domains are not
-    looked up: their registries publish no date.
+    domain's registry, to find its registration date. <span id="no-lookup-tlds">.se, .no, .dk
+    and .de</span> domains are not looked up: their registries publish no date that shows how
+    long the shop has used the domain.
   </footer>
 
   <script src="popup.js" type="module"></script>

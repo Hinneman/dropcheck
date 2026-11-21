@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "DropCheck",
+  "version": "0.1.0",
+  "description": "Shows observable dropshipping signals on online stores: supplier apps, domain age, shipping times, missing company details.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://*/*"],
+  "background": { "service_worker": "background/worker.js", "type": "module" },
+  "action": { "default_popup": "popup/popup.html", "default_title": "DropCheck" },
+  "content_scripts": [{
+    "matches": ["https://*/*"],
+    "js": ["content/detectors.js", "content/collect.js"],
+    "run_at": "document_idle"
+  }]
+}

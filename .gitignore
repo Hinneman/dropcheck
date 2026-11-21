@@ -1,0 +1,4 @@
+node_modules/
+eval/results.csv
+.claude/
+docs/

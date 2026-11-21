@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "rules": [
+    { "id": "dropship_app",     "category": "supply",   "weight": 40,
+      "text": "The page loads code from a dropshipping fulfilment app ({detail})." },
+    { "id": "supplier_images",  "category": "supply",   "weight": 30, "params": { "min": 2 },
+      "text": "{detail} product images keep AliExpress or Amazon image file names." },
+    { "id": "domain_young",     "category": "identity", "weight": 25, "params": { "maxAgeDays": 183 },
+      "text": "The domain was registered {detail}." },
+    { "id": "no_org_number",    "category": "identity", "weight": 20,
+      "text": "No company registration or VAT number found on the page or its terms, shipping and contact pages." },
+    { "id": "long_shipping",    "category": "supply",   "weight": 20, "params": { "minDays": 10 },
+      "text": "Stated delivery time is {detail}." },
+    { "id": "fake_urgency",     "category": "pressure", "weight": 15,
+      "text": "Pressure widgets on the page: {detail}." },
+    { "id": "blanket_discount", "category": "pricing",  "weight": 15,
+      "params": { "minSampled": 4, "deepOff": 0.5, "minDeepShare": 0.7 },
+      "text": "{detail}" },
+    { "id": "boilerplate",      "category": "identity", "weight": 15,
+      "text": "Unfilled template text: {detail}." },
+    { "id": "generic_email",    "category": "identity", "weight": 10,
+      "text": "Contact email is a free mailbox ({detail}), not an address at the shop's own domain." },
+    { "id": "ds_theme",         "category": "supply",   "weight": 10,
+      "text": "Uses the {detail} theme, which is marketed almost only to dropshippers." }
+  ],
+  "categoryCaps": { "supply": 50, "identity": 35, "pressure": 20, "pricing": 20 },
+  "bands": { "likely": 60, "mixed": 30 }
+}

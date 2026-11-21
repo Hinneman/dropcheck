@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DropCheck</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>DropCheck</h1>
+    <p id="host" class="muted"></p>
+  </header>
+
+  <p id="status" class="muted">Scanning…</p>
+
+  <main id="result" hidden>
+    <section id="verdict" class="verdict">
+      <p id="band" class="band"></p>
+      <p id="score" class="muted"></p>
+      <p id="caveat" class="caveat" hidden></p>
+    </section>
+
+    <section id="fired-section">
+      <h2>Signals found</h2>
+      <ul id="fired" class="signals"></ul>
+    </section>
+
+    <section id="context-section">
+      <h2>Also observed <span class="muted">(not scored)</span></h2>
+      <ul id="context" class="notes"></ul>
+    </section>
+
+    <section id="images-section" hidden>
+      <h2>Find the source</h2>
+      <p class="muted small">Opens Google Lens with the product image, so you can check whether
+        the same photo is sold on AliExpress or Temu. Sends only the image URL, and only when you click.</p>
+      <div id="images" class="images"></div>
+    </section>
+  </main>
+
+  <footer class="muted small">
+    Observations about this page, not a judgment of the company. Analysis runs in your
+    browser; only the domain name is sent to rdap.org to look up its registration date.
+  </footer>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

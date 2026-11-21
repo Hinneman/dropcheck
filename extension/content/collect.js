@@ -9,16 +9,28 @@
   const SITE_FACTS_VERSION = 4;   // bump when site-level detectors or page choice change
   const SITE_TTL_MS = 24 * 60 * 60 * 1000;
   const FETCH_TIMEOUT_MS = 6000;
+  const STORE_WAIT_MS = 8000;     // how long a late-rendering page gets to look like a store
+  const STORE_POLL_MS = 1000;
+  // Cart words in the supported markets' languages. "cart" itself is matched only as a
+  // whole path segment or button label, so it does not hit words that merely contain it.
+  // Declared up here: collect() starts below, before later declarations are initialized.
+  const CART_WORDS = ["varukorg", "kundvagn", "kassa", "handlekurv", "handlevogn", "warenkorb", "basket"];
+  const PRODUCT_PATH = /\/(products?|produkt)\/[^/?#]/i;
+  const MIN_PRODUCT_LINKS = 3;
 
   const send = payload =>
     chrome.runtime.sendMessage({ type: "PAGE_SIGNALS", payload }).catch(() => {});
 
-  // A second injection (popup asking before the first run finished) reuses the run.
+  const run = () => collect().catch(err => ({ v: 1, isStore: false, error: String(err) }));
+
+  // A second injection (popup asking before the first run finished) reuses the run,
+  // unless that run found no store: a page that renders late may have become one.
   if (window.__dropcheck) {
+    window.__dropcheck = window.__dropcheck.then(r => (r.isStore ? r : run()));
     window.__dropcheck.then(send);
     return;
   }
-  window.__dropcheck = collect().catch(err => ({ v: 1, isStore: false, error: String(err) }));
+  window.__dropcheck = run();
   window.__dropcheck.then(send);
 
   // ---------- Page reading ----------
@@ -90,13 +102,32 @@
     return out;
   }
 
+  function hasCart() {
+    const links = ['a[href$="/cart"]', 'a[href*="/cart?"]', 'form[action*="/cart"]',
+                   ...CART_WORDS.map(w => `a[href*="${w}" i]`)];
+    // Single-page stores often open the cart in a drawer from a button with no href.
+    const buttons = ["cart", ...CART_WORDS].map(w => `button[aria-label*="${w}" i]`);
+    return !!document.querySelector([...links, ...buttons].join(", "));
+  }
+
+  // Catalog pages link to several of the store's own product pages.
+  function hasProductLinks() {
+    const paths = new Set();
+    for (const a of document.querySelectorAll("a[href]")) {
+      let u;
+      try { u = new URL(a.href); } catch { continue; }
+      if (u.origin === location.origin && PRODUCT_PATH.test(u.pathname)) paths.add(u.pathname);
+      if (paths.size >= MIN_PRODUCT_LINKS) return true;
+    }
+    return false;
+  }
+
   function looksLikeStore(platform, ld) {
     if (["shopify", "woocommerce", "bigcommerce", "magento", "prestashop"].includes(platform)) return true;
     const types = ld.flatMap(o => [].concat(o["@type"] || []));
     if (types.some(t => /^(Product|Offer|AggregateOffer)$/.test(t))) return true;
     if (document.querySelector('meta[property="og:type"][content*="product" i]')) return true;
-    return !!document.querySelector(
-      'a[href$="/cart"], a[href*="/cart?"], a[href*="varukorg"], a[href*="kassa"], form[action*="/cart"]');
+    return hasCart() || hasProductLinks();
   }
 
   function absolute(url) {
@@ -286,12 +317,18 @@
   async function collect() {
     const code = codeMarkup();
     const scripts = [...document.scripts].map(s => s.src).filter(Boolean);
-    const text = pageText();
     const platform = D.detectPlatform(scripts, code);
-    const ld = jsonLdObjects();
-    const isStore = looksLikeStore(platform, ld);
+    let ld = jsonLdObjects();
+    let isStore = looksLikeStore(platform, ld);
+    // Single-page stores render their header and product grid after document_idle.
+    for (let waited = 0; !isStore && waited < STORE_WAIT_MS; waited += STORE_POLL_MS) {
+      await new Promise(resolve => setTimeout(resolve, STORE_POLL_MS));
+      ld = jsonLdObjects();
+      isStore = looksLikeStore(platform, ld);
+    }
 
     if (!isStore) return { v: 1, isStore: false };
+    const text = pageText();
 
     const base = {
       v: 1,

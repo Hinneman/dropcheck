@@ -129,7 +129,8 @@ function setBadge(tabId, band) {
 async function getVerdict(tabId) {
   const key = `tab:${tabId}`;
   const stored = (await chrome.storage.session.get(key))[key];
-  if (stored) return stored;
+  // "No shop" is re-checked: an automatic scan may have run before the page rendered.
+  if (stored && stored.verdict?.band !== "not_store") return stored;
 
   // No verdict yet: the page loaded before install, or the scan is still running.
   // Inject the collector (activeTab covers this when the popup was opened).
@@ -140,10 +141,10 @@ async function getVerdict(tabId) {
     await chrome.scripting.executeScript({ target: { tabId }, files: CONTENT_FILES });
   } catch (err) {
     waiters.delete(tabId);
-    return { error: "unsupported", detail: String(err) };
+    return stored || { error: "unsupported", detail: String(err) };
   }
   const timeout = new Promise(resolve =>
-    setTimeout(() => resolve({ error: "timeout" }), VERDICT_WAIT_MS));
+    setTimeout(() => resolve(stored || { error: "timeout" }), VERDICT_WAIT_MS));
   return Promise.race([pending, timeout]);
 }
 

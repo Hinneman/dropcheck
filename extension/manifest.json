@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DropCheck",
   "version": "0.1.0",
-  "description": "Shows observable dropshipping signals on online stores: supplier apps, domain age, shipping times, missing company details.",
+  "description": "Flags dropshipping signals on Swedish and Norwegian online stores and explains each one. Observations, not accusations.",
   "permissions": ["storage", "activeTab", "scripting", "alarms"],
   "optional_host_permissions": ["https://*/*"],
   "background": { "service_worker": "background/worker.js", "type": "module" },

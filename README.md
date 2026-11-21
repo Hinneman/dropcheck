@@ -90,7 +90,8 @@ test/                      node:test unit tests; se.test.js and no.test.js hold 
   works if one row has "URL" and "Label" column headers; labels starting with "Legit"
   count toward the false positive rate. The labeled dataset is kept out of the repo
   because it names real stores; without an argument the harness reads `docs/dataset.csv`.
-  Options: `--limit N`, `--headful`, `--out file.csv`. The harness loads a temporary copy
+  Options: `--limit N`, `--headful`, `--out file.csv`, `--concurrency N` (stores loaded at
+  once, default 4; keep it low, Shopify rate-limits per IP). The harness loads a temporary copy
   of the extension with automatic scanning granted, since a headless run cannot click
   through the permission prompt.
 

@@ -5,6 +5,10 @@
 //   npm run eval -- path/to/stores.csv
 //   npm run eval -- --limit 5 --headful
 //   npm run eval -- --extension path/to/extension   # e.g. a checkout of an older commit
+//   npm run eval -- --concurrency 1                 # one store at a time (default 4)
+//
+// Several stores load at once, each in its own tab. Shopify rate-limits /products.json
+// per IP across stores, so keep the concurrency low; a 429 shows up as a missing catalog.
 //
 // Any CSV works as long as one row has a "URL" and a "Label" column header, so the
 // spreadsheet export can be passed as is. Rows without both values are skipped.
@@ -17,16 +21,20 @@ import puppeteer from "puppeteer";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const EXTENSION = path.join(ROOT, "extension");
 const PAGE_TIMEOUT_MS = 45000;
-const VERDICT_TIMEOUT_MS = 40000;
+// After the page's HTML has loaded. A store reports within a few seconds; the collector
+// waits up to 8 s for a late-rendering page and fetches policy pages with a 6 s timeout.
+const VERDICT_TIMEOUT_MS = 20000;
+const DEFAULT_CONCURRENCY = 4;
 
 function parseArgs(argv) {
   const opts = { dataset: path.join(ROOT, "docs", "dataset.csv"), out: path.join(ROOT, "eval", "results.csv"),
-                 limit: Infinity, headful: false, extension: EXTENSION };
+                 limit: Infinity, headful: false, extension: EXTENSION, concurrency: DEFAULT_CONCURRENCY };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--out") opts.out = path.resolve(argv[++i]);
     else if (a === "--extension") opts.extension = path.resolve(argv[++i]);
     else if (a === "--limit") opts.limit = Number(argv[++i]);
+    else if (a === "--concurrency") opts.concurrency = Math.max(1, Number(argv[++i]) || 1);
     else if (a === "--headful") opts.headful = true;
     else opts.dataset = path.resolve(a);
   }
@@ -107,14 +115,16 @@ async function openProbe(browser, staticScripts) {
 
 async function verdictFor(probe, page, url) {
   const started = Date.now();
-  await page.bringToFront();
   // The content script runs at document_idle on its own and the loop below waits for
   // its verdict, so waiting for the network to go quiet only adds time.
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS }).catch(err => {
     if (!/timeout/i.test(err.message)) throw err;   // slow pages still get scanned
   });
-  const host = new URL(page.url()).hostname;
-  while (Date.now() - started < PAGE_TIMEOUT_MS + VERDICT_TIMEOUT_MS) {
+  const loaded = Date.now();
+  while (Date.now() - loaded < VERDICT_TIMEOUT_MS) {
+    // Re-read every time: some stores redirect by script after loading (a country or
+    // language switcher), and the verdict is stored under the host the page ends up on.
+    const host = new URL(page.url()).hostname;
     const entry = await probe.evaluate(
       async key => (await chrome.storage.session.get(key))[key] || null, `host:${host}`);
     if (entry && entry.at >= started) return entry;
@@ -163,11 +173,13 @@ function summarise(results) {
     console.log(`${s.label.padEnd(20)} ${String(s.n).padStart(3)}   ${pctOf(s.likely, s.n).padStart(6)}  ` +
       `${pctOf(s.mixed, s.n).padStart(6)}  ${pctOf(s.none, s.n).padStart(5)}  ${String(s.not_store).padStart(9)}  ${String(s.error).padStart(5)}`);
   }
-  const legit = [...byLabel.values()].find(s => s.label.toLowerCase().startsWith("legit"));
-  if (legit) {
-    const scored = legit.n - legit.error - legit.not_store;
+  const legitGroups = [...byLabel.values()].filter(s => s.label.toLowerCase().startsWith("legit"));
+  if (legitGroups.length) {
+    const sum = k => legitGroups.reduce((t, s) => t + s[k], 0);
+    const likely = sum("likely");
+    const scored = sum("n") - sum("error") - sum("not_store");
     console.log(`\nFalse positive rate (legitimate stores in "Likely reseller"): ` +
-      `${legit.likely}/${scored} = ${pctOf(legit.likely, scored)}   target: under 10 %`);
+      `${likely}/${scored} = ${pctOf(likely, scored)}   target: under 10 %`);
   }
 }
 
@@ -182,29 +194,37 @@ async function main() {
     pipe: true,
     enableExtensions: [extensionDir]
   });
-  const results = [];
+  // Kept in dataset order; lines are printed as stores finish.
+  const results = new Array(rows.length);
   try {
     const probe = await openProbe(browser, staticScripts);
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1366, height: 900 });
     const runStarted = Date.now();
     const secondsSince = t => ((Date.now() - t) / 1000).toFixed(1);
-    for (const row of rows) {
-      process.stdout.write(`${row.url} ... `);
-      const started = Date.now();
-      try {
-        const { verdict, signals } = await verdictFor(probe, page, row.url);
-        results.push({ ...row, score: verdict.score, band: verdict.band,
-                       rulesFired: verdict.fired.map(f => f.id).join(" "), ...basis(signals),
-                       seconds: secondsSince(started) });
-        console.log(`${verdict.band} (${verdict.score})  ${secondsSince(started)} s`);
-      } catch (err) {
-        results.push({ ...row, score: "", band: "", rulesFired: "", error: err.message,
-                       seconds: secondsSince(started) });
-        console.log(`error: ${err.message}  ${secondsSince(started)} s`);
+    let next = 0;
+    const worker = async () => {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1366, height: 900 });
+      while (next < rows.length) {
+        const i = next++;
+        const row = rows[i];
+        const started = Date.now();
+        try {
+          const { verdict, signals } = await verdictFor(probe, page, row.url);
+          results[i] = { ...row, score: verdict.score, band: verdict.band,
+                         rulesFired: verdict.fired.map(f => f.id).join(" "), ...basis(signals),
+                         seconds: secondsSince(started) };
+          console.log(`${row.url} ... ${verdict.band} (${verdict.score})  ${secondsSince(started)} s`);
+        } catch (err) {
+          results[i] = { ...row, score: "", band: "", rulesFired: "", error: err.message,
+                         seconds: secondsSince(started) };
+          console.log(`${row.url} ... error: ${err.message}  ${secondsSince(started)} s`);
+        }
       }
-    }
-    console.log(`\nTotal ${secondsSince(runStarted)} s for ${rows.length} stores`);
+      await page.close();
+    };
+    await Promise.all(Array.from({ length: Math.min(opts.concurrency, rows.length) }, worker));
+    console.log(`\nTotal ${secondsSince(runStarted)} s for ${rows.length} stores ` +
+      `(${opts.concurrency} at a time)`);
   } finally {
     await browser.close();
     rmSync(extensionDir, { recursive: true, force: true });

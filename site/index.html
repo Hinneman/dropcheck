@@ -25,7 +25,11 @@
       "name": "DropCheck",
       "applicationCategory": "BrowserApplication",
       "operatingSystem": "Chrome",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
       "description": "Chrome extension that shows signs that a Swedish or Norwegian web shop resells products from AliExpress, Temu or Amazon, and explains each sign.",
       "url": "https://hinneman.github.io/dropcheck/",
       "codeRepository": "https://github.com/Hinneman/dropcheck",
@@ -34,12 +38,158 @@
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "How can I tell whether a web shop is dropshipping?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Typical signs are product photos that keep AliExpress, Alibaba or Amazon file names, returns sent to China or to an unnamed international warehouse, buyers told to pay import VAT or customs, delivery times of ten days or more, a newly registered domain or a catalog created in the last few months, no company registration number, a phone number abroad, countdown timers, and nearly every product marked down 50 percent or more. One sign alone proves little; several together are a strong hint." } },
-        { "@type": "Question", "name": "Does a warning mean the shop is a scam?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Dropshipping is legal. A warning means the shop shows signs of reselling products from elsewhere, which often means longer delivery, returns abroad and quality that differs from the photos. DropCheck reports observations about the pages, not a judgment of the company." } },
-        { "@type": "Question", "name": "What data does DropCheck send?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Analysis runs in your browser. For domains other than .se, .dk and .de, only the shop's domain name is sent to rdap.org to look up its registration date. An image URL goes to Google Lens only when you click it under Find the source." } }
+        {
+          "@type": "Question",
+          "name": "What is dropshipping?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A dropshipping shop sells products it never holds. When you order, it passes the order on to a supplier, often on AliExpress, Temu, Alibaba or Amazon, who ships the parcel straight to you, usually from China. Dropshipping is legal. The problem is shops that look like a local brand and hide where the goods come from, how long delivery takes and where returns go."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why do dropshipping shops charge so much?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You often pay several times what the same product costs from the supplier. The difference pays for the shop's advertising and margin, not for better quality or service. Searching for the product photo (Find the source in DropCheck) often shows the same item on a marketplace."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does delivery take so long?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The parcel comes from the supplier abroad, often in one to three weeks and sometimes longer. Shops may still promise fast delivery, or only count the days until the order is sent."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Will the product look like the photos?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Often not. The photos come from the supplier or are made with AI tools, and the product that arrives can be a cheaper version in another material or size. Consumer agencies name this as one of the most common complaints about dropshipping."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I return the product?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Within the EU you usually have 14 days to cancel a purchase made online. Dropshipping shops often require returns to go to a warehouse in China at your own cost, which can be more than the product is worth. Some only give the return address after you contact them."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Will I have to pay customs or import VAT?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Since July 2021, import VAT applies to all goods from outside the EU, whatever their value. Since 1 July 2026 the EU also charges a flat customs duty of 3 euro on parcels worth up to 150 euro, and carriers often add a handling fee. Some shops collect this at checkout, others leave it for you to pay on delivery. In Norway, shops registered in the VOEC scheme charge VAT at checkout; otherwise VAT, any customs duty and a fee are collected on delivery."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are the products safe?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Products from unknown suppliers may not meet EU rules on chemicals, electrical safety or toys. Swedish authorities such as Kemikalieinspektionen and Elsäkerhetsverket have warned about hazardous substances and a risk of fire or electric shock in goods bought this way. Take extra care with chargers, electronics, toys, cosmetics and jewellery."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "I have already ordered from a dropshipping shop. What now?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Save screenshots of the product page, the order confirmation, the terms and all emails. Contact the shop in writing and give it a deadline. If it does not answer or refuses, ask your card issuer for a chargeback, or open a dispute with Klarna or PayPal. Do this quickly: banks and payment services have time limits."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who can help me?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In Sweden, Hallå konsument answers questions, ARN handles disputes with Swedish companies and Konsument Europa helps with companies in other EU countries, Norway and Iceland. In Norway, Forbrukerrådet helps, and Forbruker Europa handles companies in other European countries. For shops outside Europe these bodies can do little; the payment route in the previous answer is often the only way to get your money back."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I report a dishonest shop?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Report misleading shops to Konsumentverket (Sweden) or Forbrukertilsynet (Norway). Reports help them see patterns, even when they cannot solve your own case. Konsumentverket also has an article on dropshipping. You can report the shop to DropCheck too, with the Missed reseller form."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are all dropshipping shops bad?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Some shops say openly that they ship from a supplier abroad, state realistic delivery times and handle returns properly. The problem is shops that hide it behind a made-up local brand. That is why DropCheck reports observations, not accusations."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I tell whether a web shop is dropshipping?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Typical signs are product photos that keep AliExpress, Alibaba or Amazon file names, returns sent to China or to an unnamed international warehouse, buyers told to pay import VAT or customs, delivery times of ten days or more, a newly registered domain or a catalog created in the last few months, no company registration number, a phone number abroad, countdown timers, and nearly every product marked down 50 percent or more. One sign alone proves little; several together are a strong hint."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does a warning mean the shop is a scam?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Dropshipping is legal. A warning means the shop shows signs of reselling products from elsewhere, which often means longer delivery, returns abroad and quality that differs from the photos. DropCheck reports observations about the pages, not a judgment of the company."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why do file names of product photos matter?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Shops that copy listings from a marketplace often upload the supplier's photos unchanged. The file names keep the marketplace's image IDs, for example a long code that starts with O1CN01 (Alibaba, Taobao, 1688) or an Amazon code ending in _AC_. A shop that photographs its own products has no reason to have such names."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why would paying import VAT be a warning sign in Sweden?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sweden is in the EU. A shop that ships from inside the EU never charges Swedish customers import VAT or customs. If a shop that only delivers within Sweden says you pay them, the goods come from outside the EU, usually straight from the supplier."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What data does DropCheck send?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Analysis runs in your browser. For domains other than .se, .dk and .de, only the shop's domain name is sent to rdap.org to look up its registration date. An image URL goes to Google Lens only when you click it under Find the source."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which shops does it work on?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Any web shop, but best on Shopify, where most dropshipping shops run, because DropCheck can also read the product catalog. Company numbers, addresses and phone codes are recognised for Sweden and Norway; image, policy and pricing signs work for shops in any country."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "DropCheck got a shop wrong. What can I do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Please report it. Shops that DropCheck gets wrong are the most useful data for improving it. Use False alarm for an honest shop that was flagged, or Missed reseller for a reseller that was not."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I install it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Download the zip from the latest release and unzip it. Open chrome://extensions, turn on Developer mode, click Load unpacked and select the unzipped folder."
+          }
+        }
       ]
     }
   ]
@@ -60,6 +210,98 @@
 </header>
 
 <main>
+<h2>Problems with dropshipping</h2>
+
+<details open>
+<summary>What is dropshipping?</summary>
+<p>A dropshipping shop sells products it never holds. When you order, it passes the order on to
+a supplier, often on AliExpress, Temu, Alibaba or Amazon, who ships the parcel straight to you,
+usually from China. Dropshipping is legal. The problem is shops that look like a local brand and
+hide where the goods come from, how long delivery takes and where returns go.</p>
+</details>
+
+<details>
+<summary>Why do dropshipping shops charge so much?</summary>
+<p>You often pay several times what the same product costs from the supplier. The difference pays
+for the shop's advertising and margin, not for better quality or service. Searching for the
+product photo (Find the source in DropCheck) often shows the same item on a marketplace.</p>
+</details>
+
+<details>
+<summary>Why does delivery take so long?</summary>
+<p>The parcel comes from the supplier abroad, often in one to three weeks and sometimes longer.
+Shops may still promise fast delivery, or only count the days until the order is sent.</p>
+</details>
+
+<details>
+<summary>Will the product look like the photos?</summary>
+<p>Often not. The photos come from the supplier or are made with AI tools, and the product that
+arrives can be a cheaper version in another material or size. Consumer agencies name this as
+one of the most common complaints about dropshipping.</p>
+</details>
+
+<details>
+<summary>Can I return the product?</summary>
+<p>Within the EU you usually have 14 days to cancel a purchase made online. Dropshipping shops
+often require returns to go to a warehouse in China at your own cost, which can be more than the
+product is worth. Some only give the return address after you contact them.</p>
+</details>
+
+<details>
+<summary>Will I have to pay customs or import VAT?</summary>
+<p>Since July 2021, import VAT applies to all goods from outside the EU, whatever their value.
+Since 1 July 2026 the EU also charges a flat
+<a href="https://commission.europa.eu/news-and-media/news/ensuring-fairness-and-safety-eur3-customs-duty-low-value-parcels-2026-06-29_en">customs duty of 3 euro</a>
+on parcels worth up to 150 euro, and carriers often add a handling fee. Some shops collect this
+at checkout, others leave it for you to pay on delivery. In Norway, shops registered in the
+<a href="https://www.toll.no/no/netthandel/VOEC">VOEC scheme</a> charge VAT at checkout;
+otherwise VAT, any customs duty and a fee are collected on delivery.</p>
+</details>
+
+<details>
+<summary>Are the products safe?</summary>
+<p>Products from unknown suppliers may not meet EU rules on chemicals, electrical safety or toys.
+Swedish authorities such as Kemikalieinspektionen and Elsäkerhetsverket have warned about
+hazardous substances and a risk of fire or electric shock in goods bought this way. Take extra
+care with chargers, electronics, toys, cosmetics and jewellery.</p>
+</details>
+
+<details>
+<summary>I have already ordered from a dropshipping shop. What now?</summary>
+<p>Save screenshots of the product page, the order confirmation, the terms and all emails.
+Contact the shop in writing and give it a deadline. If it does not answer or refuses, ask your
+card issuer for a chargeback, or open a dispute with Klarna or PayPal. Do this quickly: banks
+and payment services have time limits.</p>
+</details>
+
+<details>
+<summary>Who can help me?</summary>
+<p>In Sweden, <a href="https://www.hallakonsument.se/">Hallå konsument</a> answers questions,
+<a href="https://www.arn.se/">ARN</a> handles disputes with Swedish companies and
+<a href="https://www.konsumenteuropa.se/">Konsument Europa</a> helps with companies in other EU
+countries, Norway and Iceland. In Norway, <a href="https://www.forbrukerradet.no/">Forbrukerrådet</a>
+helps, and <a href="https://www.forbrukereuropa.no/">Forbruker Europa</a> handles companies in
+other European countries. For shops outside Europe these bodies can do little; the payment route
+in the previous answer is often the only way to get your money back.</p>
+</details>
+
+<details>
+<summary>How do I report a dishonest shop?</summary>
+<p>Report misleading shops to <a href="https://www.konsumentverket.se/">Konsumentverket</a>
+(Sweden) or <a href="https://www.forbrukertilsynet.no/">Forbrukertilsynet</a> (Norway). Reports
+help them see patterns, even when they cannot solve your own case. Konsumentverket also has an
+<a href="https://konsumentverket.se/en/articles/dropshipping-english">article on dropshipping</a>.
+You can report the shop to DropCheck too, with the
+<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-reseller.yml">Missed reseller</a> form.</p>
+</details>
+
+<details>
+<summary>Are all dropshipping shops bad?</summary>
+<p>No. Some shops say openly that they ship from a supplier abroad, state realistic delivery times
+and handle returns properly. The problem is shops that hide it behind a made-up local brand. That
+is why DropCheck reports observations, not accusations.</p>
+</details>
+
 <h2>What DropCheck does</h2>
 <p>Click the DropCheck icon on a shop's page. DropCheck reads the page, the shop's own terms,
 shipping and contact pages and, on Shopify, its product catalog. It then lists every sign it
@@ -94,7 +336,7 @@ than one direction to be called a likely reseller.</p>
 as context only. Wording that limits customs to orders abroad, or a Swedish or Norwegian return
 address, does not count against a shop.</p>
 
-<h2>Questions and answers</h2>
+<h2>Questions about DropCheck</h2>
 
 <details open>
 <summary>How can I tell whether a web shop is dropshipping?</summary>

@@ -1,5 +1,6 @@
 // Renders the Chrome Web Store graphics into store/screenshots/:
 //   screenshot-dropshipper.png, screenshot-honest.png (1280x800), promo-small.png (440x280)
+// and copies the two screenshots to site/screenshots/<en|sv|nb>/ for the website.
 //
 //   npm run store-screenshots                   English, Swedish shops
 //   npm run store-screenshots -- --lang sv      Swedish, into store/screenshots/sv/
@@ -9,7 +10,7 @@
 // www.example.se, keramik.example.se, www.example.no and keramikk.example.no (and the
 // Shopify CDN) is answered here, so no real shop is contacted or shown. The extension runs from a temporary copy with automatic
 // scanning granted, as in eval/run.js, and the popup is opened with chrome.action.openPopup().
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,6 +26,7 @@ if (LANG !== null && !isLanguage(LANG)) {
   process.exit(1);
 }
 const OUT = path.join(ROOT, "store", "screenshots", ...(LANG ? [LANG] : []));
+const SITE_OUT = path.join(ROOT, "site", "screenshots", LANG || "en");
 const DAY = 86400000;
 const iso = daysAgo => new Date(Date.now() - daysAgo * DAY).toISOString();
 
@@ -322,6 +324,9 @@ async function main() {
     if (LANG) await probe.evaluate((key, lang) => chrome.storage.local.set({ [key]: lang }), LANGUAGE_KEY, LANG);
     for (const [host, shop] of Object.entries(SHOPS)) await shootShop(browser, worker, probe, host, shop);
     await shootPromo(browser);
+    mkdirSync(SITE_OUT, { recursive: true });
+    for (const shop of Object.values(SHOPS)) copyFileSync(path.join(OUT, shop.file), path.join(SITE_OUT, shop.file));
+    console.log(`copied to ${path.relative(ROOT, SITE_OUT)}`);
   } finally {
     await browser.close();
     rmSync(extensionDir, { recursive: true, force: true });

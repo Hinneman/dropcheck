@@ -134,11 +134,16 @@ function basis(s) {
     orgNumbers: (s?.identity?.orgNumbers || []).join(" "),
     // Oldest of at most 250 products from /products.json, so a capped catalog may be older.
     oldestProduct: s?.catalog?.oldestProduct ?? "",
+    oldestProductDays: s?.catalog?.oldestProductDays ?? "",
     productCount: s?.catalog?.productCount ?? "",
     supplierImageIds: s?.supplierImageIds ?? "",
     supplierTagIds: s?.supplierTagIds ?? "",
     aiImages: s?.aiImages ?? "",
     importSourceTags: s?.catalog?.importSourceTags ?? "",
+    phoneCodes: (s?.identity?.phoneCodes || []).join(" "),
+    emails: (s?.identity?.emails || []).join(" "),
+    returnsAbroad: (s?.returnsAbroad || []).join("; "),
+    importCharge: s?.importCharge ?? "",
     pagesScanned: (s?.pagesScanned || []).join(" ")
   };
 }
@@ -206,8 +211,9 @@ async function main() {
   }
 
   const header = ["url", "label", "score", "band", "rulesFired", "market", "domain", "domainAgeDays",
-                  "hasCompanyId", "orgNumbers", "oldestProduct", "productCount", "supplierImageIds",
-                  "supplierTagIds", "aiImages", "importSourceTags", "pagesScanned", "seconds", "error"];
+                  "hasCompanyId", "orgNumbers", "oldestProduct", "oldestProductDays", "productCount", "supplierImageIds",
+                  "supplierTagIds", "aiImages", "importSourceTags",
+                  "phoneCodes", "emails", "returnsAbroad", "importCharge", "pagesScanned", "seconds", "error"];
   writeFileSync(opts.out, [header.join(","), ...results.map(r => header.map(h => csvCell(r[h])).join(","))].join("\n") + "\n");
   console.log(`\nWrote ${path.relative(ROOT, opts.out)}`);
   summarise(results);

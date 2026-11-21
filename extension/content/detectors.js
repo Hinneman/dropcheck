@@ -249,6 +249,54 @@
     return quotes;
   }
 
+  // ---------- Content: where returns go, who pays import charges ----------
+
+  // Places outside the EU that return addresses of dropshipping stores name.
+  const NON_EU_PLACES = "china|kina|guangzhou|shenzhen|yiwu|dongguan|guangdong|zhejiang|fujian|hong\\s?kong";
+  const RETURN_TO_PLACE_RE = new RegExp(
+    `(?:${words("returnWord")})[\\s\\S]{0,150}?(?:${words("returnAddress")})([\\s\\S]{0,250}?)${W0}(${NON_EU_PLACES})${W1}`, "gi");
+  // A domestic address between the return wording and the place means the return
+  // address is at home and the place name belongs to the next sentence ("made in China").
+  const DOMESTIC_ADDRESS_RES = Object.values(MARKETS).flatMap(m => m.addressRes);
+  const FOREIGN_WAREHOUSE_RE = new RegExp(`${W0}(${words("foreignWarehouse")})${W1}`, "i");
+  const NOT_RETURN_ADDRESS_RE = new RegExp(`${W0}(${words("notReturnAddress")})${W1}`, "i");
+
+  // Labels for each sign that returns go abroad or to an unnamed place. A company
+  // address marked as "not a return address" is reported only next to one of the others:
+  // honest shops say that too when their returns go to a separate domestic warehouse.
+  function detectReturnsAbroad(text) {
+    const found = [];
+    const place = [...text.matchAll(RETURN_TO_PLACE_RE)]
+      .find(m => !DOMESTIC_ADDRESS_RES.some(re => re.test(m[1])));
+    if (place) found.push(`return address in ${place[2].replace(/\s+/g, " ")}`);
+    const warehouse = text.match(FOREIGN_WAREHOUSE_RE);
+    if (warehouse) found.push(`returns go to an "${warehouse[1].toLowerCase()}"`);
+    if (found.length && NOT_RETURN_ADDRESS_RE.test(text)) found.push('the company address is "not a return address"');
+    return found;
+  }
+
+  const IMPORT_CHARGE_RE = new RegExp(`${W0}(${words("importCharge")})${W1}`, "i");
+  const CHARGED_RE = new RegExp(`(${words("chargedToBuyer")})`, "i");
+  const QUALIFIER_RE = new RegExp(`${W0}(${words("chargeQualifier")})${W1}`, "i");
+  const QUALIFIER_WINDOW = 300;   // a heading or the sentence before often names the destination
+  const NO_CHARGE_RE = new RegExp(
+    `${W0}(?:${words("noCharge")})\\s+(?:\\S+\\s+){0,2}(?:${words("importCharge")})${W1}|tullfri|tollfri|zollfrei|duty[\\s-]free`, "i");
+
+  // The first sentence telling the buyer to pay import VAT or customs without limiting it
+  // to orders outside the EU or to other countries, or null. A shop that ships from
+  // inside the EU never charges Swedish buyers import VAT. The limitation may sit in the
+  // sentence itself or in the text just before it.
+  function detectImportCharges(text) {
+    for (const m of text.matchAll(/[^\n.!?]+[.!?]?/g)) {
+      const s = m[0].trim();
+      if (!IMPORT_CHARGE_RE.test(s) || !CHARGED_RE.test(s) || NO_CHARGE_RE.test(s)) continue;
+      const before = text.slice(Math.max(0, m.index - QUALIFIER_WINDOW), m.index);
+      if (QUALIFIER_RE.test(s) || QUALIFIER_RE.test(before)) continue;
+      return s.length > 160 ? s.slice(0, 157) + "..." : s;
+    }
+    return null;
+  }
+
   // ---------- Content: identity ----------
 
   // Registration wording followed by a number, for markets without a profile.
@@ -276,6 +324,35 @@
 
   function detectAddress(text) {
     return ADDRESS_RES.some(re => re.test(text));
+  }
+
+  // International dialling codes, longest first when read from a number.
+  const PHONE_COUNTRIES = {
+    1: "USA or Canada", 7: "Russia", 27: "South Africa", 31: "Netherlands", 32: "Belgium",
+    33: "France", 34: "Spain", 36: "Hungary", 39: "Italy", 40: "Romania", 41: "Switzerland",
+    43: "Austria", 44: "United Kingdom", 45: "Denmark", 46: "Sweden", 47: "Norway", 48: "Poland",
+    49: "Germany", 52: "Mexico", 55: "Brazil", 60: "Malaysia", 61: "Australia", 62: "Indonesia",
+    63: "Philippines", 64: "New Zealand", 65: "Singapore", 66: "Thailand", 81: "Japan",
+    82: "South Korea", 84: "Vietnam", 86: "China", 90: "Turkey", 91: "India", 351: "Portugal",
+    353: "Ireland", 354: "Iceland", 358: "Finland", 370: "Lithuania", 371: "Latvia",
+    372: "Estonia", 380: "Ukraine", 420: "Czechia", 852: "Hong Kong", 886: "Taiwan",
+    971: "United Arab Emirates"
+  };
+
+  // Country calling codes of the "+NN ..." phone numbers in the text, without duplicates.
+  function extractPhoneCodes(text) {
+    const codes = new Set();
+    for (const m of text.matchAll(/(?<![\w+])\+\s?(\d[\d\s().-]{6,20}\d)/g)) {
+      const digits = m[1].replace(/\D/g, "");
+      if (digits.length < 8 || digits.length > 15) continue;
+      const code = [3, 2, 1].map(n => digits.slice(0, n)).find(c => c in PHONE_COUNTRIES);
+      if (code) codes.add(code);
+    }
+    return [...codes];
+  }
+
+  function phoneCountry(code) {
+    return PHONE_COUNTRIES[code] || null;
   }
 
   // Which market the store presents itself to. The domain is the strongest claim,
@@ -368,8 +445,9 @@
     countSupplierTags, countImportSourceTags, countAiImages,
     registrableDomain, tldInfo,
     detectCountdownText, detectStockUrgency, detectViewerCount,
-    extractShippingQuotes,
-    findCompanyIds, detectAddress, detectMarket, extractEmails, isFreemail, detectBoilerplate,
+    extractShippingQuotes, detectReturnsAbroad, detectImportCharges,
+    findCompanyIds, detectAddress, extractPhoneCodes, phoneCountry,
+    detectMarket, extractEmails, isFreemail, detectBoilerplate,
     parsePrices, toNumber, discountOff
   };
 })();

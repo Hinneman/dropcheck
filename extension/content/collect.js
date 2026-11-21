@@ -6,7 +6,7 @@
 // in chrome.storage.local so browsing a store does not refetch them on every page.
 (() => {
   const D = globalThis.DropCheckDetectors;
-  const SITE_FACTS_VERSION = 3;   // bump when site-level detectors or page choice change
+  const SITE_FACTS_VERSION = 4;   // bump when site-level detectors or page choice change
   const SITE_TTL_MS = 24 * 60 * 60 * 1000;
   const FETCH_TIMEOUT_MS = 6000;
 
@@ -270,6 +270,9 @@
       shippingQuotes: D.extractShippingQuotes(text),
       companyIds: D.findCompanyIds(text),
       hasAddress: D.detectAddress(text),
+      phoneCodes: D.extractPhoneCodes(text),
+      returnsAbroad: D.detectReturnsAbroad(text),
+      importCharge: D.detectImportCharges(text),
       emails: D.extractEmails(text),
       boilerplate: D.detectBoilerplate(text),
       catalog
@@ -328,10 +331,13 @@
         quotes: shippingQuotes.slice(0, 20),
         fastestMax: shippingQuotes.length ? Math.min(...shippingQuotes.map(q => q.max)) : null
       },
+      returnsAbroad: [...new Set([...D.detectReturnsAbroad(text), ...site.returnsAbroad])],
+      importCharge: D.detectImportCharges(text) || site.importCharge,
       identity: {
         hasCompanyId: pageCompany.hasCompanyId || site.companyIds.hasCompanyId,
         orgNumbers: [...new Set([...pageCompany.orgNumbers, ...site.companyIds.orgNumbers])],
         hasAddress: D.detectAddress(text) || site.hasAddress,
+        phoneCodes: [...new Set([...D.extractPhoneCodes(text), ...site.phoneCodes])],
         emails,
         boilerplate: [...new Set([...D.detectBoilerplate(text), ...site.boilerplate])]
       },

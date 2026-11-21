@@ -54,6 +54,12 @@ const TESTS = {
   ai_images(s, p) {
     return (s.aiImages || 0) >= (p.min ?? 2) ? String(s.aiImages) : null;
   },
+  returns_abroad(s) {
+    return s.returnsAbroad?.length ? s.returnsAbroad.join("; ") : null;
+  },
+  import_charges(s) {
+    return s.importCharge || null;
+  },
   domain_young(s, p) {
     const age = s.domain?.ageDays;
     return age != null && age < p.maxAgeDays ? formatAge(age) : null;
@@ -88,6 +94,14 @@ const TESTS = {
   boilerplate(s) {
     const b = s.identity?.boilerplate || [];
     return b.length ? b.join(", ") : null;
+  },
+  // Only when every phone number found is foreign: a shop may list a support line
+  // abroad next to its domestic number.
+  foreign_phone(s) {
+    const market = s.market && MARKETS[s.market.id];
+    const codes = s.identity?.phoneCodes || [];
+    if (!market?.phoneCode || !codes.length || codes.includes(market.phoneCode)) return null;
+    return codes.map(c => `+${c}` + (D.phoneCountry(c) ? ` (${D.phoneCountry(c)})` : "")).join(", ");
   },
   generic_email(s) {
     const emails = s.identity?.emails || [];

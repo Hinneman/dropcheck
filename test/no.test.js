@@ -8,6 +8,23 @@ import { rules, store } from "./helpers.js";
 
 const D = globalThis.DropCheckDetectors;
 
+test("Norwegian returns abroad and import charges", () => {
+  assert.deepEqual(D.detectReturnsAbroad("Returer sendes til vårt internasjonale lager."),
+    ['returns go to an "internasjonale lager"']);
+  assert.ok(D.detectImportCharges("Toll og importmva betales av kunden ved levering."));
+  assert.equal(D.detectImportCharges("Ingen toll eller avgifter, vi sender fra Norge."), null);
+  assert.equal(D.detectImportCharges("For bestillinger utenfor Norge kan toll tilkomme, som betales av kunden."), null);
+});
+
+test("a Norwegian store with only a foreign phone number fires foreign_phone", () => {
+  const no = { market: { id: "no", name: "Norwegian", reason: ".no domain" } };
+  const identity = { ...store().identity, phoneCodes: ["44"] };
+  const v = scoreSignals(store({ ...no, identity }), rules);
+  assert.ok(v.fired.find(f => f.id === "foreign_phone").text.includes("+44 (United Kingdom)"));
+  const both = { ...identity, phoneCodes: ["44", "47"] };
+  assert.ok(!scoreSignals(store({ ...no, identity: both }), rules).fired.some(f => f.id === "foreign_phone"));
+});
+
 test("Norwegian urgency wording", () => {
   assert.ok(D.detectStockUrgency("Skynd deg! Kun 3 igjen på lager"));
   assert.ok(D.detectViewerCount("12 personer ser på dette nå"));

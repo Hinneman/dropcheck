@@ -87,6 +87,29 @@ test("countImportSourceTags counts import-source ID tags only", () => {
   assert.equal(D.countImportSourceTags(tags), 1);
 });
 
+test("returns abroad in English and German", () => {
+  assert.deepEqual(D.detectReturnsAbroad("Approved returns must be sent to the following address: Unit 1, Example Road, Shenzhen, China."),
+    ["return address in Shenzhen"]);
+  assert.deepEqual(D.detectReturnsAbroad("Bestätigte Rückgaben werden an folgende Adresse gesendet: Beispielstraße 1, Guangzhou, China"),
+    ["return address in Guangzhou"]);
+  assert.deepEqual(D.detectReturnsAbroad("Returns are handled by our overseas warehouse."),
+    ['returns go to an "overseas warehouse"']);
+});
+
+test("import charges in English and German", () => {
+  assert.ok(D.detectImportCharges("Import duties and taxes are the responsibility of the customer."));
+  assert.equal(D.detectImportCharges("For customers outside the EU, customs duties may apply and are paid by the customer."), null);
+  assert.equal(D.detectImportCharges("No customs fees, everything ships from Europe and is paid by us."), null);
+  assert.ok(D.detectImportCharges("Zollgebühren sind vom Käufer zu tragen."));
+  assert.equal(D.detectImportCharges("Bei Lieferungen in Nicht-EU-Länder sind Zollgebühren vom Empfänger zu tragen."), null);
+});
+
+test("extractPhoneCodes reads international numbers", () => {
+  assert.deepEqual(D.extractPhoneCodes("Telefon: +1 (555) 010 0199\nTel +46 8 123 456 78"), ["1", "46"]);
+  assert.deepEqual(D.extractPhoneCodes("Ring +31612345678 eller +358 40 1234567"), ["31", "358"]);
+  assert.deepEqual(D.extractPhoneCodes("Spara +50 kr och 12+ år"), []);
+});
+
 test("registrableDomain strips subdomains", () => {
   assert.equal(D.registrableDomain("shop.example.se"), "example.se");
   assert.equal(D.registrableDomain("www.example.co.uk"), "example.co.uk");

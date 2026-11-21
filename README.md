@@ -17,9 +17,11 @@ single kind of evidence can decide the verdict on its own.
   Spocket, Oberlo), product images that keep AliExpress, Alibaba or Amazon file names,
   product tags with Amazon product IDs left by import apps, product images that keep the
   default file name of an AI image generator, stated delivery times of 10 days or more,
-  themes marketed to dropshippers.
+  themes marketed to dropshippers, returns sent to China or to an unnamed "international
+  warehouse", buyers told to pay import VAT or customs on domestic orders.
 - **Identity:** a domain registered less than six months ago, no company registration
-  or VAT number, a free-mail contact address, unfilled template text.
+  or VAT number, phone numbers only with a foreign country code, a free-mail contact
+  address, unfilled template text.
 - **Sales pressure:** countdown timers, "only N left" and "N people viewing" counters.
 - **Pricing:** most products marked down 50 % or more from a struck-through price.
 

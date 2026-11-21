@@ -20,7 +20,24 @@
       notShip: ["return", "refund", "warranty", "processing", "handling", "exchange"],
       dayPrefix: ["business", "working", "bank"],
       days: ["days?"],
-      weeks: ["weeks?"]
+      weeks: ["weeks?"],
+      // Where returns go. Stems, matched without a word boundary at the end.
+      returnWord: ["return"],
+      returnAddress: ["address", "send (?:it|them|the item|your return) to", "ship (?:it|them) to"],
+      foreignWarehouse: ["international (?:return(?:s)? )?(?:warehouse|centre|center)",
+                         "overseas (?:return(?:s)? )?(?:warehouse|centre|center)"],
+      notReturnAddress: ["not (?:a|our) return address"],
+      // Import charges the buyer pays. Whole words.
+      importCharge: ["import (?:duty|duties|vat|tax|taxes|fees|charges)",
+                     "customs (?:duty|duties|fees|charges|clearance fees)", "duties and taxes"],
+      chargedToBuyer: ["paid by", "charged to", "responsibility of", "your responsibility",
+                       "customer is responsible", "you are responsible", "buyer is responsible",
+                       "not included in the price", "at your expense"],
+      chargeQualifier: ["outside (?:of )?the eu", "outside eu", "non-eu", "outside europe",
+                        "international orders", "international shipments", "international customers",
+                        "other countries", "abroad", "switzerland", "united kingdom", "uk", "norway",
+                        "usa", "united states", "us orders", "canada", "australia"],
+      noCharge: ["no", "without", "free of"]
     },
     sv: {
       sale: ["slutar", "rea", "erbjudande", "kampanj"],
@@ -33,7 +50,20 @@
                 "behandl", "hantering", "byte"],
       dayPrefix: ["arbets", "var"],
       days: ["dagar", "dygn", "dgr"],
-      weeks: ["veckor"]
+      weeks: ["veckor"],
+      returnWord: ["retur"],
+      returnAddress: ["adress", "skicka(?:s)? (?:den |varan |returen |paketet )?till"],
+      foreignWarehouse: ["internationell(?:a|t)? (?:retur)?(?:lager|center|centret)",
+                         "utländsk(?:a|t)? (?:retur)?lager", "lager utomlands"],
+      notReturnAddress: ["ingen returadress", "inte (?:en |vår )?returadress", "ej returadress"],
+      importCharge: ["importmoms", "importavgift(?:er|erna)?", "importtull", "införselmoms",
+                     "tull", "tullar", "tullavgift(?:er|erna)?", "tullkostnad(?:er|erna)?"],
+      chargedToBuyer: ["debiteras", "betalas av", "tillkommer", "står (?:du|kunden) för",
+                       "ansvarar (?:du|kunden) för", "kundens ansvar", "ingår inte"],
+      chargeQualifier: ["utanför eu", "utanför europa", "utanför sverige", "internationella beställningar",
+                        "internationella order", "andra länder", "utlandet", "schweiz", "storbritannien",
+                        "norge", "usa", "stater", "kanada", "australien"],
+      noCharge: ["inga", "ingen", "utan"]
     },
     nb: {
       sale: ["slutter", "tilbud", "salg", "kampanje"],
@@ -46,7 +76,19 @@
                 "bytte", "refusjon"],
       dayPrefix: ["arbeids", "virke"],
       days: ["dager", "døgn"],
-      weeks: ["uker"]
+      weeks: ["uker"],
+      returnWord: ["retur"],
+      returnAddress: ["adresse", "sendes til", "send (?:varen |pakken |returen )?til"],
+      foreignWarehouse: ["internasjonal(?:e|t)? (?:retur)?(?:lager|senter)",
+                         "utenlandsk(?:e)? (?:retur)?lager", "lager i utlandet"],
+      notReturnAddress: ["ingen returadresse", "ikke (?:en |vår )?returadresse"],
+      importCharge: ["importmva", "importavgift(?:er|ene)?", "toll", "tollavgift(?:er|ene)?",
+                     "tollgebyr(?:er|ene)?", "fortolling(?:sgebyr)?"],
+      chargedToBuyer: ["betales av", "belastes", "tilkommer", "kundens ansvar",
+                       "ansvarlig for", "ikke inkludert"],
+      chargeQualifier: ["utenfor eu", "utenfor europa", "utenfor norge", "internasjonale bestillinger",
+                        "andre land", "utlandet", "sveits", "storbritannia", "usa", "kanada", "australia"],
+      noCharge: ["ingen", "uten"]
     },
     de: {
       sale: ["endet", "angebot"],
@@ -58,7 +100,18 @@
       notShip: ["widerruf", "rückgabe", "garantie", "bearbeitung"],
       dayPrefix: ["werk"],
       days: ["tage"],
-      weeks: ["wochen"]
+      weeks: ["wochen"],
+      returnWord: ["rücksend", "rückgabe", "retoure"],
+      returnAddress: ["adresse", "anschrift", "gesendet", "senden an", "schicken an"],
+      foreignWarehouse: ["internationale(?:s|n)? (?:retouren)?lager", "auslandslager", "lager im ausland"],
+      notReturnAddress: ["keine rücksendeadresse", "keine retourenadresse"],
+      importCharge: ["einfuhrumsatzsteuer", "einfuhrabgaben", "einfuhrgebühren", "importgebühren",
+                     "zollgebühren", "zollkosten", "zoll"],
+      chargedToBuyer: ["zu tragen", "trägt der käufer", "trägt der kunde", "vom käufer", "vom kunden",
+                       "vom empfänger", "nicht im preis enthalten", "nicht enthalten"],
+      chargeQualifier: ["außerhalb der eu", "nicht-eu", "drittländer", "internationale bestellungen",
+                        "ausland", "schweiz", "großbritannien", "norwegen", "usa", "kanada", "australien"],
+      noCharge: ["keine", "ohne"]
     }
   };
 
@@ -90,6 +143,7 @@
       tlds: ["se"],
       langs: ["sv"],
       currencies: ["SEK"],
+      phoneCode: "46",
       localPayments: ["klarna", "swish", "invoice", "svea", "qliro", "walley", "trustly"],
       localPaymentLabel: "Klarna, Swish or invoice",
       orgNumber: {
@@ -107,6 +161,7 @@
       tlds: ["no"],
       langs: ["nb", "nn", "no"],
       currencies: ["NOK"],
+      phoneCode: "47",
       localPayments: ["vipps", "klarna", "invoice", "walley", "svea"],
       localPaymentLabel: "Vipps, Klarna or invoice",
       // A bare 9-digit number is too common to trust, so require the keyword or the

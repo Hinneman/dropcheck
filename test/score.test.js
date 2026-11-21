@@ -67,6 +67,22 @@ test("AI generator file names fire from two images", () => {
   assert.ok(v.fired.find(f => f.id === "ai_images").text.startsWith("3 product images"));
 });
 
+test("returns abroad and import charges fire with the page wording", () => {
+  const v = scoreSignals(store({
+    returnsAbroad: ["return address in Kina"],
+    importCharge: "Importmoms debiteras dig."
+  }), rules);
+  assert.ok(v.fired.find(f => f.id === "returns_abroad").text.includes("return address in Kina"));
+  assert.ok(v.fired.find(f => f.id === "import_charges").text.includes('"Importmoms debiteras dig."'));
+});
+
+test("a Swedish store with a Swedish number does not fire foreign_phone", () => {
+  const identity = { ...store().identity, phoneCodes: ["46"] };
+  assert.ok(!scoreSignals(store({ identity }), rules).fired.some(f => f.id === "foreign_phone"));
+  const abroad = { ...identity, phoneCodes: ["31"] };
+  assert.ok(scoreSignals(store({ identity: abroad }), rules).fired.some(f => f.id === "foreign_phone"));
+});
+
 test("Printful alone is context, not a signal", () => {
   const v = scoreSignals(store({ apps: ["printful"] }), rules);
   assert.equal(v.score, 0);

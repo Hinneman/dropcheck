@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DropCheck - se om en nätbutik dropshippar innan du köper</title>
+<meta name="description" content="DropCheck är ett gratis tillägg för Chrome som visar tecken på att en svensk nätbutik säljer vidare varor från AliExpress, Temu eller Amazon (dropshipping) och förklarar varje tecken.">
+<link rel="canonical" href="https://hinneman.github.io/dropcheck/sv/">
+<link rel="alternate" hreflang="en" href="https://hinneman.github.io/dropcheck/">
+<link rel="alternate" hreflang="sv" href="https://hinneman.github.io/dropcheck/sv/">
+<link rel="alternate" hreflang="nb" href="https://hinneman.github.io/dropcheck/no/">
+<link rel="alternate" hreflang="x-default" href="https://hinneman.github.io/dropcheck/">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../style.css">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sv_SE">
+<meta property="og:title" content="DropCheck - se om en nätbutik dropshippar innan du köper">
+<meta property="og:description" content="Ett gratis tillägg för Chrome som visar och förklarar tecken på att en nätbutik säljer vidare varor från marknadsplatser.">
+<meta property="og:url" content="https://hinneman.github.io/dropcheck/sv/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "sv",
+  "mainEntity": [
+    { "@type": "Question", "name": "Hur ser man om en nätbutik dropshippar?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Typiska tecken är produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon, returer som ska skickas till Kina eller till ett onämnt internationellt lager, att köparen ska betala importmoms eller tull, leveranstider på tio dagar eller mer, en nyregistrerad domän eller ett sortiment som skapats de senaste månaderna, inget organisationsnummer, ett utländskt telefonnummer, nedräkningar och att nästan alla varor är nedsatta 50 procent eller mer. Ett enskilt tecken säger lite; flera tillsammans är en stark indikation." } },
+    { "@type": "Question", "name": "Betyder en varning att butiken är en bluff?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Nej. Dropshipping är lagligt. En varning betyder att butiken visar tecken på att sälja vidare varor från någon annan, vilket ofta innebär längre leverans, returer till utlandet och en kvalitet som skiljer sig från bilderna. DropCheck rapporterar iakttagelser om sidorna, inte ett omdöme om företaget." } },
+    { "@type": "Question", "name": "Varför är importmoms ett varningstecken?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Sverige är med i EU. En butik som skickar från ett EU-land tar aldrig ut importmoms eller tull av svenska kunder. Om en butik som bara levererar inom Sverige skriver att du betalar sådant kommer varorna från ett land utanför EU, oftast direkt från leverantören." } }
+  ]
+}
+</script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="../icon.svg" alt="" width="52" height="52">
+    <h1>DropCheck</h1>
+  </div>
+  <p class="lead">Ett gratis tillägg för Chrome som visar tecken på att en nätbutik säljer vidare
+  varor från AliExpress, Temu eller Amazon (dropshipping) och förklarar varje tecken. Byggt för
+  svenska och norska nätbutiker.</p>
+  <nav class="lang" aria-label="Språk"><a href="../" hreflang="en">English</a><span>Svenska</span><a href="../no/" hreflang="nb">Norsk</a></nav>
+  <a class="button" href="https://github.com/Hinneman/dropcheck/releases/latest">Ladda ner senaste versionen</a>
+</header>
+
+<main>
+<h2>Vad DropCheck gör</h2>
+<p>Klicka på DropCheck-ikonen på en butiks sida. DropCheck läser sidan, butikens egna köpvillkor,
+frakt- och kontaktsidor och, på Shopify, dess produktkatalog. Sedan listas varje tecken som hittats,
+varför det spelar roll, och ett sammanfattande omdöme. Ingenting skickas till DropCheck eller någon
+annan: analysen sker i din webbläsare.</p>
+
+<h2>Hur omdömet räknas fram</h2>
+<p>Varje tecken ger poäng i en av fyra kategorier. Varje kategori har ett tak, så ingen enskild sorts
+bevis kan avgöra omdömet ensam: en ny domän plus ett saknat organisationsnummer plus en gratis
+e-postadress räknas fortfarande bara som svag identitet. En butik behöver tecken från mer än ett håll
+för att klassas som trolig återförsäljare.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Kategori</th><th>Tak</th><th>Tecken</th></tr></thead>
+<tbody>
+<tr><td>Leverantör</td><td>50</td><td>Produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon; Amazon-produkt-id:n från importappar; bilder med standardnamnet från en AI-bildgenerator; returer till Kina eller ett onämnt "internationellt lager"; köparen betalar importmoms eller tull på inrikes beställningar; leverans på tio dagar eller mer; dropshippingappar och teman.</td></tr>
+<tr><td>Identitet</td><td>35</td><td>En domän eller ett sortiment som är yngre än sex månader; inget organisations- eller momsnummer; bara utländska telefonnummer; en e-postadress på ett annat varumärkes domän; en gratis e-postadress; platshållartext från en mall som aldrig fyllts i.</td></tr>
+<tr><td>Säljpress</td><td>20</td><td>Nedräkningar, "bara N kvar" och "N personer tittar".</td></tr>
+<tr><td>Priser</td><td>20</td><td>De flesta varor nedsatta 50 % eller mer från ett överstruket pris.</td></tr>
+</tbody>
+</table>
+</div>
+
+<ul class="bands">
+<li class="likely"><strong>Likely reseller</strong> (trolig återförsäljare) - 60 poäng eller mer.</li>
+<li class="mixed"><strong>Mixed signals</strong> (blandade tecken) - 30 till 59 poäng. Värt att titta närmare på.</li>
+<li class="none"><strong>No reseller signals found</strong> (inga tecken hittades) - under 30 poäng.</li>
+</ul>
+
+<p>Plattformen butiken körs på, recensionsappar och betallogotyper ger aldrig poäng: de visas bara
+som sammanhang. Text som begränsar tull till beställningar utomlands, eller en svensk eller norsk
+returadress, räknas inte mot butiken.</p>
+
+<h2>Frågor och svar</h2>
+
+<details open>
+<summary>Hur ser man om en nätbutik dropshippar?</summary>
+<p>Typiska tecken är produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon,
+returer som ska skickas till Kina eller till ett onämnt internationellt lager, att köparen ska betala
+importmoms eller tull, leveranstider på tio dagar eller mer, en nyregistrerad domän eller ett
+sortiment som skapats de senaste månaderna, inget organisationsnummer, ett utländskt telefonnummer,
+nedräkningar och att nästan alla varor är nedsatta 50 procent eller mer. Ett enskilt tecken säger
+lite; flera tillsammans är en stark indikation.</p>
+</details>
+
+<details>
+<summary>Betyder en varning att butiken är en bluff?</summary>
+<p>Nej. Dropshipping är lagligt. En varning betyder att butiken visar tecken på att sälja vidare
+varor från någon annan, vilket ofta innebär längre leverans, returer till utlandet och en kvalitet
+som skiljer sig från bilderna. DropCheck rapporterar iakttagelser om sidorna, inte ett omdöme om
+företaget.</p>
+</details>
+
+<details>
+<summary>Varför spelar filnamnen på produktbilderna roll?</summary>
+<p>Butiker som kopierar annonser från en marknadsplats laddar ofta upp leverantörens bilder
+oförändrade. Filnamnen behåller marknadsplatsens bild-id, till exempel en lång kod som börjar med
+<code>O1CN01</code> (Alibaba, Taobao, 1688) eller en Amazon-kod som slutar på <code>_AC_</code>.
+En butik som fotograferar sina egna produkter har ingen anledning att ha sådana namn.</p>
+</details>
+
+<details>
+<summary>Varför är importmoms ett varningstecken?</summary>
+<p>Sverige är med i EU. En butik som skickar från ett EU-land tar aldrig ut importmoms eller tull
+av svenska kunder. Om en butik som bara levererar inom Sverige skriver att du betalar sådant kommer
+varorna från ett land utanför EU, oftast direkt från leverantören.</p>
+</details>
+
+<details>
+<summary>Vilka uppgifter skickar DropCheck?</summary>
+<p>Analysen sker i din webbläsare. För andra domäner än .se, .dk och .de skickas bara butikens
+domännamn till rdap.org för att hämta registreringsdatumet. En bild-URL går till Google Lens bara
+när du klickar på den under "Find the source".</p>
+</details>
+
+<details>
+<summary>På vilka butiker fungerar det?</summary>
+<p>På alla nätbutiker, men bäst på Shopify, där de flesta dropshippingbutiker finns, eftersom
+DropCheck då också kan läsa produktkatalogen. Organisationsnummer, adresser och riktnummer känns
+igen för Sverige och Norge; tecken i bilder, villkor och priser fungerar för butiker i alla länder.</p>
+</details>
+
+<details>
+<summary>DropCheck bedömde en butik fel. Vad gör jag?</summary>
+<p>Rapportera det gärna. Butiker som DropCheck bedömer fel är de mest användbara uppgifterna för
+att förbättra det. Använd <a href="https://github.com/Hinneman/dropcheck/issues/new?template=false-alarm.yml">False alarm</a>
+för en ärlig butik som flaggades, eller
+<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-reseller.yml">Missed reseller</a>
+för en återförsäljare som inte flaggades. Du får skriva på svenska.</p>
+</details>
+
+<details>
+<summary>Hur installerar jag det?</summary>
+<p>Ladda ner zip-filen från <a href="https://github.com/Hinneman/dropcheck/releases/latest">senaste versionen</a>
+och packa upp den. Öppna <code>chrome://extensions</code>, slå på Utvecklarläge, klicka på Läs in
+okomprimerat tillägg och välj den uppackade mappen.</p>
+</details>
+</main>
+
+<footer>
+<p>DropCheck är öppen källkod: <a href="https://github.com/Hinneman/dropcheck">github.com/Hinneman/dropcheck</a>.
+Tillägget rapporterar iakttagelser om webbsidor, inte omdömen om företag. Tillägget självt är än så länge på engelska.</p>
+</footer>
+</body>
+</html>

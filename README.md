@@ -8,6 +8,21 @@ company.
 
 <br clear="left">
 
+**Svenska:** DropCheck är ett tillägg för Chrome som visar tecken på att en nätbutik
+säljer vidare varor från AliExpress, Temu eller Amazon (dropshipping): bilder från
+marknadsplatser, returer till utlandet, tull som köparen betalar, en ny domän och saknat
+organisationsnummer. Varje tecken förklaras.
+
+**Norsk:** DropCheck er en utvidelse for Chrome som viser tegn på at en nettbutikk
+videreselger varer fra AliExpress, Temu eller Amazon (dropshipping): bilder fra
+markedsplasser, returer til utlandet, toll som kjøperen betaler, et nytt domene og
+manglende organisasjonsnummer. Hvert tegn forklares.
+
+Questions and answers, and how the verdict is reached:
+[hinneman.github.io/dropcheck](https://hinneman.github.io/dropcheck/)
+([svenska](https://hinneman.github.io/dropcheck/sv/),
+[norsk](https://hinneman.github.io/dropcheck/no/)).
+
 ## What it checks
 
 Each signal scores points in one of four categories. Every category is capped, so no

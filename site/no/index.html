@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DropCheck - sjekk om en nettbutikk dropshipper før du kjøper</title>
+<meta name="description" content="DropCheck er en gratis utvidelse for Chrome som viser tegn på at en norsk nettbutikk videreselger varer fra AliExpress, Temu eller Amazon (dropshipping), og forklarer hvert tegn.">
+<link rel="canonical" href="https://hinneman.github.io/dropcheck/no/">
+<link rel="alternate" hreflang="en" href="https://hinneman.github.io/dropcheck/">
+<link rel="alternate" hreflang="sv" href="https://hinneman.github.io/dropcheck/sv/">
+<link rel="alternate" hreflang="nb" href="https://hinneman.github.io/dropcheck/no/">
+<link rel="alternate" hreflang="x-default" href="https://hinneman.github.io/dropcheck/">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../style.css">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="nb_NO">
+<meta property="og:title" content="DropCheck - sjekk om en nettbutikk dropshipper før du kjøper">
+<meta property="og:description" content="En gratis utvidelse for Chrome som viser og forklarer tegn på at en nettbutikk videreselger varer fra markedsplasser.">
+<meta property="og:url" content="https://hinneman.github.io/dropcheck/no/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "nb",
+  "mainEntity": [
+    { "@type": "Question", "name": "Hvordan ser man om en nettbutikk dropshipper?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Typiske tegn er produktbilder som har beholdt filnavn fra AliExpress, Alibaba eller Amazon, returer som skal sendes til Kina eller til et ikke navngitt internasjonalt lager, at kjøperen må betale toll eller importmva på varer som sendes innenlands, leveringstid på ti dager eller mer, et nyregistrert domene eller et sortiment som er opprettet de siste månedene, manglende organisasjonsnummer, et utenlandsk telefonnummer, nedtellinger og at nesten alle varer er satt ned 50 prosent eller mer. Ett enkelt tegn sier lite; flere sammen er en sterk indikasjon." } },
+    { "@type": "Question", "name": "Betyr en advarsel at butikken er svindel?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Nei. Dropshipping er lovlig. En advarsel betyr at butikken viser tegn på å videreselge varer fra noen andre, noe som ofte betyr lengre levering, returer til utlandet og en kvalitet som avviker fra bildene. DropCheck rapporterer observasjoner om sidene, ikke en vurdering av firmaet." } },
+    { "@type": "Question", "name": "Hvilke data sender DropCheck?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Analysen skjer i nettleseren din. For .no og andre domener enn .se, .dk og .de sendes bare butikkens domenenavn til rdap.org for å finne registreringsdatoen. En bilde-URL sendes til Google Lens bare når du klikker på den under Find the source." } }
+  ]
+}
+</script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="../icon.svg" alt="" width="52" height="52">
+    <h1>DropCheck</h1>
+  </div>
+  <p class="lead">En gratis utvidelse for Chrome som viser tegn på at en nettbutikk videreselger
+  varer fra AliExpress, Temu eller Amazon (dropshipping), og forklarer hvert tegn. Laget for norske
+  og svenske nettbutikker.</p>
+  <nav class="lang" aria-label="Språk"><a href="../" hreflang="en">English</a><a href="../sv/" hreflang="sv">Svenska</a><span>Norsk</span></nav>
+  <a class="button" href="https://github.com/Hinneman/dropcheck/releases/latest">Last ned siste versjon</a>
+</header>
+
+<main>
+<h2>Hva DropCheck gjør</h2>
+<p>Klikk på DropCheck-ikonet på en butikks side. DropCheck leser siden, butikkens egne kjøpsvilkår,
+frakt- og kontaktsider og, på Shopify, produktkatalogen. Deretter listes hvert tegn som ble funnet,
+hvorfor det betyr noe, og en samlet vurdering. Ingenting sendes til DropCheck eller noen andre:
+analysen skjer i nettleseren din.</p>
+
+<h2>Hvordan vurderingen regnes ut</h2>
+<p>Hvert tegn gir poeng i en av fire kategorier. Hver kategori har et tak, så ingen enkelt type
+bevis kan avgjøre vurderingen alene: et nytt domene pluss manglende organisasjonsnummer pluss en
+gratis e-postadresse teller fortsatt bare som svak identitet. En butikk må vise tegn fra mer enn
+én retning for å regnes som sannsynlig videreselger.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Kategori</th><th>Tak</th><th>Tegn</th></tr></thead>
+<tbody>
+<tr><td>Leverandør</td><td>50</td><td>Produktbilder som har beholdt filnavn fra AliExpress, Alibaba eller Amazon; Amazon-produkt-ID-er fra importapper; bilder med standardnavnet fra en AI-bildegenerator; returer til Kina eller et ikke navngitt "internasjonalt lager"; kjøperen betaler toll eller importmva på innenlandske bestillinger; levering på ti dager eller mer; dropshippingapper og temaer.</td></tr>
+<tr><td>Identitet</td><td>35</td><td>Et domene eller sortiment som er yngre enn seks måneder; manglende organisasjons- eller MVA-nummer; bare utenlandske telefonnumre; en e-postadresse på et annet merkes domene; en gratis e-postadresse; plassholdertekst fra en mal som aldri ble fylt ut.</td></tr>
+<tr><td>Salgspress</td><td>20</td><td>Nedtellinger, "kun N igjen" og "N personer ser på dette".</td></tr>
+<tr><td>Priser</td><td>20</td><td>De fleste varer satt ned 50 % eller mer fra en overstreket pris.</td></tr>
+</tbody>
+</table>
+</div>
+
+<ul class="bands">
+<li class="likely"><strong>Likely reseller</strong> (sannsynlig videreselger) - 60 poeng eller mer.</li>
+<li class="mixed"><strong>Mixed signals</strong> (blandede tegn) - 30 til 59 poeng. Verdt å se nærmere på.</li>
+<li class="none"><strong>No reseller signals found</strong> (ingen tegn funnet) - under 30 poeng.</li>
+</ul>
+
+<p>Plattformen butikken kjører på, anmeldelsesapper og betalingslogoer gir aldri poeng: de vises
+bare som sammenheng. Tekst som begrenser toll til bestillinger fra utlandet, eller en norsk eller
+svensk returadresse, teller ikke mot butikken.</p>
+
+<h2>Spørsmål og svar</h2>
+
+<details open>
+<summary>Hvordan ser man om en nettbutikk dropshipper?</summary>
+<p>Typiske tegn er produktbilder som har beholdt filnavn fra AliExpress, Alibaba eller Amazon,
+returer som skal sendes til Kina eller til et ikke navngitt internasjonalt lager, at kjøperen må
+betale toll eller importmva på varer som sendes innenlands, leveringstid på ti dager eller mer, et
+nyregistrert domene eller et sortiment som er opprettet de siste månedene, manglende
+organisasjonsnummer, et utenlandsk telefonnummer, nedtellinger og at nesten alle varer er satt ned
+50 prosent eller mer. Ett enkelt tegn sier lite; flere sammen er en sterk indikasjon.</p>
+</details>
+
+<details>
+<summary>Betyr en advarsel at butikken er svindel?</summary>
+<p>Nei. Dropshipping er lovlig. En advarsel betyr at butikken viser tegn på å videreselge varer fra
+noen andre, noe som ofte betyr lengre levering, returer til utlandet og en kvalitet som avviker fra
+bildene. DropCheck rapporterer observasjoner om sidene, ikke en vurdering av firmaet.</p>
+</details>
+
+<details>
+<summary>Hvorfor betyr filnavnene på produktbildene noe?</summary>
+<p>Butikker som kopierer annonser fra en markedsplass laster ofte opp leverandørens bilder uendret.
+Filnavnene beholder markedsplassens bilde-ID, for eksempel en lang kode som begynner med
+<code>O1CN01</code> (Alibaba, Taobao, 1688) eller en Amazon-kode som slutter på <code>_AC_</code>.
+En butikk som fotograferer sine egne produkter har ingen grunn til å ha slike navn.</p>
+</details>
+
+<details>
+<summary>Hvilke data sender DropCheck?</summary>
+<p>Analysen skjer i nettleseren din. For .no og andre domener enn .se, .dk og .de sendes bare
+butikkens domenenavn til rdap.org for å finne registreringsdatoen. En bilde-URL sendes til Google
+Lens bare når du klikker på den under "Find the source".</p>
+</details>
+
+<details>
+<summary>Hvilke butikker fungerer det på?</summary>
+<p>Alle nettbutikker, men best på Shopify, der de fleste dropshippingbutikker ligger, fordi
+DropCheck da også kan lese produktkatalogen. Organisasjonsnumre, adresser og retningsnumre
+gjenkjennes for Norge og Sverige; tegn i bilder, vilkår og priser fungerer for butikker i alle land.</p>
+</details>
+
+<details>
+<summary>DropCheck vurderte en butikk feil. Hva gjør jeg?</summary>
+<p>Rapporter det gjerne. Butikker som DropCheck vurderer feil er de mest nyttige dataene for å
+forbedre det. Bruk <a href="https://github.com/Hinneman/dropcheck/issues/new?template=false-alarm.yml">False alarm</a>
+for en ærlig butikk som ble flagget, eller
+<a href="https://github.com/Hinneman/dropcheck/issues/new?template=missed-reseller.yml">Missed reseller</a>
+for en videreselger som ikke ble flagget. Du kan skrive på norsk.</p>
+</details>
+
+<details>
+<summary>Hvordan installerer jeg det?</summary>
+<p>Last ned zip-filen fra <a href="https://github.com/Hinneman/dropcheck/releases/latest">siste versjon</a>
+og pakk den ut. Åpne <code>chrome://extensions</code>, slå på Utviklermodus, klikk på Last inn
+upakket og velg den utpakkede mappen.</p>
+</details>
+</main>
+
+<footer>
+<p>DropCheck er åpen kildekode: <a href="https://github.com/Hinneman/dropcheck">github.com/Hinneman/dropcheck</a>.
+Utvidelsen rapporterer observasjoner om nettsider, ikke vurderinger av firmaer. Selve utvidelsen er foreløpig på engelsk.</p>
+</footer>
+</body>
+</html>

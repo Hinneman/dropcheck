@@ -1,0 +1,65 @@
+:root {
+  --bg: #fbfaf8;
+  --fg: #1d1d1b;
+  --muted: #5d5b57;
+  --line: #e3e0da;
+  --card: #ffffff;
+  --accent: #b42318;
+  --link: #1d4ed8;
+  --likely: #b42318;
+  --mixed: #b54708;
+  --none: #16794a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615;
+    --fg: #ecebe8;
+    --muted: #a8a59f;
+    --line: #34332f;
+    --card: #1f1f1d;
+    --accent: #f97066;
+    --link: #8ab4ff;
+    --likely: #f97066;
+    --mixed: #fdb022;
+    --none: #47cd89;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main, header, footer { max-width: 46rem; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 2.5rem; }
+.brand { display: flex; align-items: center; gap: 0.8rem; }
+.brand img { width: 52px; height: 52px; }
+.brand h1 { margin: 0; font-size: 2rem; line-height: 1.1; }
+.lead { font-size: 1.15rem; color: var(--muted); margin: 1rem 0 0; }
+nav.lang { margin-top: 1rem; font-size: 0.95rem; }
+nav.lang a, nav.lang span { margin-right: 0.8rem; }
+nav.lang span { font-weight: 600; }
+a { color: var(--link); }
+h2 { margin: 2.6rem 0 0.6rem; font-size: 1.4rem; }
+h3 { margin: 1.6rem 0 0.4rem; font-size: 1.1rem; }
+.button {
+  display: inline-block; margin: 1.2rem 0 0; padding: 0.6rem 1.1rem;
+  background: var(--accent); color: #fff; border-radius: 6px; text-decoration: none; font-weight: 600;
+}
+@media (prefers-color-scheme: dark) { .button { color: #161615; } }
+table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+.bands { display: grid; gap: 0.6rem; margin: 0.8rem 0; padding: 0; list-style: none; }
+.bands li { background: var(--card); border: 1px solid var(--line); border-left-width: 5px; border-radius: 6px; padding: 0.6rem 0.9rem; }
+.bands .likely { border-left-color: var(--likely); }
+.bands .mixed { border-left-color: var(--mixed); }
+.bands .none { border-left-color: var(--none); }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 6px; margin: 0.6rem 0; padding: 0.2rem 0.9rem; }
+summary { cursor: pointer; font-weight: 600; padding: 0.5rem 0; }
+details p, details ul { margin: 0.3rem 0 0.8rem; }
+footer { margin-top: 3rem; padding-bottom: 2.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+footer p { margin: 1rem 0 0; }

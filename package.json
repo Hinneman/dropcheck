@@ -6,7 +6,8 @@
   "description": "Chrome extension that flags dropshipping signals on Swedish and Norwegian online stores.",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
-    "eval": "node eval/run.js"
+    "eval": "node eval/run.js",
+    "icons": "node scripts/render-icons.js"
   },
   "devDependencies": {
     "puppeteer": "^25.18.1"

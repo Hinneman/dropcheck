@@ -1,8 +1,12 @@
 # DropCheck
 
+<img src="assets/icon.svg" alt="DropCheck icon" width="64" align="left">
+
 Chrome extension that flags dropshipping signals on Swedish and Norwegian online stores
 and explains each one. It reports observations about a page, not a judgment of the
 company.
+
+<br clear="left">
 
 ## What it checks
 
@@ -39,6 +43,11 @@ extension/                 load this folder in Chrome
   rules/signals.json       weights, category caps, band thresholds
   popup/                   verdict, fired rules, context, "Find the source",
                            automatic scanning setting
+  icons/                   PNG icons rendered from assets/ (npm run icons)
+assets/icon.svg            icon source
+assets/icon-16.svg,        simplified toolbar versions (16 and 32 px), drawn on the
+assets/icon-32.svg         pixel grid
+scripts/render-icons.js    renders the PNG icons with Puppeteer
 eval/
   run.js                   Puppeteer harness -> eval/results.csv + false positive rate
 test/                      node:test unit tests; se.test.js and no.test.js hold the

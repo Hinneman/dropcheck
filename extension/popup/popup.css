@@ -40,6 +40,9 @@ h1 { display: flex; align-items: center; gap: 6px; font-size: 15px; margin: 0; }
 h1 img { flex: none; }
 h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 6px; color: var(--muted); }
 h2 .muted { text-transform: none; letter-spacing: 0; }
+h2:has(> .icon) { display: flex; align-items: center; gap: 5px; }
+h2 .icon { flex: none; }
+.icon-warning { color: var(--mixed-fg); }
 header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 header p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

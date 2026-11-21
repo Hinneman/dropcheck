@@ -4,6 +4,7 @@
 //   npm run eval                                   # docs/dataset.csv (not in the repo)
 //   npm run eval -- path/to/stores.csv
 //   npm run eval -- --limit 5 --headful
+//   npm run eval -- --extension path/to/extension   # e.g. a checkout of an older commit
 //
 // Any CSV works as long as one row has a "URL" and a "Label" column header, so the
 // spreadsheet export can be passed as is. Rows without both values are skipped.
@@ -20,10 +21,11 @@ const VERDICT_TIMEOUT_MS = 40000;
 
 function parseArgs(argv) {
   const opts = { dataset: path.join(ROOT, "docs", "dataset.csv"), out: path.join(ROOT, "eval", "results.csv"),
-                 limit: Infinity, headful: false };
+                 limit: Infinity, headful: false, extension: EXTENSION };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--out") opts.out = path.resolve(argv[++i]);
+    else if (a === "--extension") opts.extension = path.resolve(argv[++i]);
     else if (a === "--limit") opts.limit = Number(argv[++i]);
     else if (a === "--headful") opts.headful = true;
     else opts.dataset = path.resolve(a);
@@ -72,28 +74,32 @@ const csvCell = v => {
 };
 
 // Headless Chrome cannot click through the permission prompt, so the eval loads a copy
-// of the extension with automatic scanning granted in the manifest.
-function autoScanCopy() {
+// of the extension with automatic scanning granted in the manifest. Versions before
+// opt-in scanning declare static content scripts and are copied unchanged.
+function autoScanCopy(source) {
   const dir = mkdtempSync(path.join(os.tmpdir(), "dropcheck-eval-"));
-  cpSync(EXTENSION, dir, { recursive: true });
+  cpSync(source, dir, { recursive: true });
   const manifestPath = path.join(dir, "manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  manifest.host_permissions = manifest.optional_host_permissions;
-  delete manifest.optional_host_permissions;
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  return dir;
+  const staticScripts = Boolean(manifest.content_scripts?.length);
+  if (manifest.optional_host_permissions) {
+    manifest.host_permissions = manifest.optional_host_permissions;
+    delete manifest.optional_host_permissions;
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  }
+  return { dir, staticScripts };
 }
 
 // Verdicts are read from chrome.storage.session through an extension page. The
 // service worker is not used for this because Chrome stops it when idle.
-async function openProbe(browser) {
+async function openProbe(browser, staticScripts) {
   const target = await browser.waitForTarget(
     t => t.type() === "service_worker" && t.url().endsWith("background/worker.js"),
     { timeout: 30000 });
   const extensionId = new URL(target.url()).host;
   const probe = await browser.newPage();
   await probe.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-  await probe.waitForFunction(
+  if (!staticScripts) await probe.waitForFunction(
     async () => (await chrome.scripting.getRegisteredContentScripts()).length > 0,
     { timeout: 30000, polling: 250 });
   return probe;
@@ -113,6 +119,19 @@ async function verdictFor(probe, page, url) {
     await new Promise(r => setTimeout(r, 1000));
   }
   throw new Error("no verdict (content script did not report)");
+}
+
+// What the verdict was based on, so a false alarm can be traced to missing input.
+// Pages that were not stores have none of these fields.
+function basis(s) {
+  return {
+    market: s?.market?.id ?? "",
+    domain: s?.domain?.name ?? "",
+    domainAgeDays: s?.domain?.ageDays ?? "",
+    hasCompanyId: s?.identity ? String(s.identity.hasCompanyId) : "",
+    orgNumbers: (s?.identity?.orgNumbers || []).join(" "),
+    pagesScanned: (s?.pagesScanned || []).join(" ")
+  };
 }
 
 function summarise(results) {
@@ -143,7 +162,7 @@ async function main() {
   const rows = loadDataset(opts.dataset).slice(0, opts.limit);
   console.log(`Evaluating ${rows.length} stores from ${path.relative(ROOT, opts.dataset)}`);
 
-  const extensionDir = autoScanCopy();
+  const { dir: extensionDir, staticScripts } = autoScanCopy(opts.extension);
   const browser = await puppeteer.launch({
     headless: !opts.headful,
     pipe: true,
@@ -151,15 +170,15 @@ async function main() {
   });
   const results = [];
   try {
-    const probe = await openProbe(browser);
+    const probe = await openProbe(browser, staticScripts);
     const page = await browser.newPage();
     await page.setViewport({ width: 1366, height: 900 });
     for (const row of rows) {
       process.stdout.write(`${row.url} ... `);
       try {
-        const { verdict } = await verdictFor(probe, page, row.url);
+        const { verdict, signals } = await verdictFor(probe, page, row.url);
         results.push({ ...row, score: verdict.score, band: verdict.band,
-                       rulesFired: verdict.fired.map(f => f.id).join(" ") });
+                       rulesFired: verdict.fired.map(f => f.id).join(" "), ...basis(signals) });
         console.log(`${verdict.band} (${verdict.score})`);
       } catch (err) {
         results.push({ ...row, score: "", band: "", rulesFired: "", error: err.message });
@@ -171,7 +190,8 @@ async function main() {
     rmSync(extensionDir, { recursive: true, force: true });
   }
 
-  const header = ["url", "label", "score", "band", "rulesFired", "error"];
+  const header = ["url", "label", "score", "band", "rulesFired", "market", "domain", "domainAgeDays",
+                  "hasCompanyId", "orgNumbers", "pagesScanned", "error"];
   writeFileSync(opts.out, [header.join(","), ...results.map(r => header.map(h => csvCell(r[h])).join(","))].join("\n") + "\n");
   console.log(`\nWrote ${path.relative(ROOT, opts.out)}`);
   summarise(results);

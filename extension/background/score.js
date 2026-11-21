@@ -40,8 +40,19 @@ const TESTS = {
     const hits = (s.apps || []).filter(a => a in SUPPLY_APPS);
     return hits.length ? hits.map(a => SUPPLY_APPS[a]).join(", ") : null;
   },
+  // Image file names and import-app product tags both point at a marketplace listing.
   supplier_images(s, p) {
-    return s.supplierImageIds >= (p.min ?? 2) ? String(s.supplierImageIds) : null;
+    const images = s.supplierImageIds || 0, tags = s.supplierTagIds || 0;
+    if (images + tags < (p.min ?? 2)) return null;
+    const parts = [];
+    if (images) parts.push(images === 1 ? "1 product image keeps an AliExpress, Alibaba or Amazon file name"
+      : `${images} product images keep AliExpress, Alibaba or Amazon file names`);
+    if (tags) parts.push(tags === 1 ? "1 product carries an Amazon product ID tag"
+      : `${tags} products carry an Amazon product ID tag`);
+    return parts.join("; ");
+  },
+  ai_images(s, p) {
+    return (s.aiImages || 0) >= (p.min ?? 2) ? String(s.aiImages) : null;
   },
   domain_young(s, p) {
     const age = s.domain?.ageDays;

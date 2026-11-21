@@ -6,7 +6,7 @@
 // in chrome.storage.local so browsing a store does not refetch them on every page.
 (() => {
   const D = globalThis.DropCheckDetectors;
-  const SITE_FACTS_VERSION = 2;   // bump when site-level detectors change
+  const SITE_FACTS_VERSION = 3;   // bump when site-level detectors or page choice change
   const SITE_TTL_MS = 24 * 60 * 60 * 1000;
   const FETCH_TIMEOUT_MS = 6000;
 
@@ -160,19 +160,28 @@
   // Path only, not link text: a "Log out and return" link must never be fetched.
   const POLICY_LINK = /(terms|villkor|shipping|frakt|leverans|delivery|contact|kontakt|about|om-oss|imprint|impressum|retur|return|refund|faq)/i;
   const UNSAFE_PATH = /(account|konto|login|logout|log-out|signin|sign-in|signout|sign-out|cart|varukorg|checkout|kassa|order|cancel|delete|remove|unsubscribe|wishlist)/i;
+  // Shopify's contact-information and legal-notice policies are where merchants are
+  // asked for their registration and VAT numbers.
   const SHOPIFY_PATHS = ["/policies/terms-of-service", "/policies/shipping-policy",
-                         "/policies/refund-policy", "/pages/contact"];
+                         "/policies/refund-policy", "/pages/contact",
+                         "/policies/contact-information", "/policies/legal-notice"];
+  const MAX_POLICY_PAGES = 9;
+  // "/sv-se/pages/contact" is the same page as "/pages/contact" in another language.
+  const LOCALE_PREFIX = /^\/[a-z]{2}(?:-[a-z]{2})?(?=\/)/i;
 
   function policyPaths(platform) {
-    const paths = [];
+    const paths = platform === "shopify" ? [...SHOPIFY_PATHS] : [];
     for (const a of document.querySelectorAll("a[href]")) {
       let u;
       try { u = new URL(a.href); } catch { continue; }
       if (u.origin !== location.origin || u.pathname === location.pathname) continue;
       if (POLICY_LINK.test(u.pathname) && !UNSAFE_PATH.test(u.pathname)) paths.push(u.pathname);
     }
-    if (platform === "shopify") paths.unshift(...SHOPIFY_PATHS);
-    return [...new Set(paths)].slice(0, 7);
+    const seen = new Set();
+    return paths.filter(p => {
+      const key = p.replace(LOCALE_PREFIX, "").toLowerCase();
+      return !seen.has(key) && seen.add(key);
+    }).slice(0, MAX_POLICY_PAGES);
   }
 
   async function fetchWithTimeout(url) {
@@ -218,14 +227,23 @@
         if (p.vendor) vendors.set(p.vendor, (vendors.get(p.vendor) || 0) + 1);
       }
       const top = m => [...m].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-      const images = products.slice(0, 60).flatMap(p => (p.images || []).slice(0, 2).map(i => i.src));
+      // Every image: marketplace file names often sit deep in the catalog or on a
+      // product's later images, and the URLs are already in this response.
+      const images = products.flatMap(p => (p.images || []).map(i => i.src));
+      const created = products.map(p => String(p.created_at || "").slice(0, 10)).filter(Boolean).sort();
+      const tags = products.flatMap(p =>
+        Array.isArray(p.tags) ? p.tags : String(p.tags || "").split(","));
       return {
         productCount: products.length,
+        oldestProduct: created[0] || null,
         offs,
         productTypes: types.size,
         typeSample: top(types).slice(0, 8),
         vendors: top(vendors).slice(0, 3),
-        supplierImageIds: D.countSupplierImageIds(images)
+        supplierImageIds: D.countSupplierImageIds(images),
+        aiImages: D.countAiImages(images),
+        supplierTagIds: D.countSupplierTags(tags),
+        importSourceTags: D.countImportSourceTags(tags)
       };
     } catch {
       return null;
@@ -320,8 +338,12 @@
       paymentMethods: D.detectPaymentMethods(paymentMarkup() + "\n" + code),
       productImages: topProductImageUrls(3, ld),
       supplierImageIds: Math.max(D.countSupplierImageIds(allImageUrls()), catalog ? catalog.supplierImageIds : 0),
+      supplierTagIds: catalog ? catalog.supplierTagIds || 0 : 0,
+      aiImages: Math.max(D.countAiImages(allImageUrls()), catalog ? catalog.aiImages || 0 : 0),
       catalog: catalog && {
         productCount: catalog.productCount,
+        oldestProduct: catalog.oldestProduct,
+        importSourceTags: catalog.importSourceTags || 0,
         productTypes: catalog.productTypes,
         typeSample: catalog.typeSample,
         vendors: catalog.vendors

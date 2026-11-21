@@ -51,6 +51,22 @@ test("category caps stop stacking", () => {
   assert.ok(v.fired.every(f => f.capped));
 });
 
+test("Amazon product ID tags count as supplier evidence", () => {
+  const tagged = scoreSignals(store({ supplierTagIds: 40 }), rules).fired.find(f => f.id === "supplier_images");
+  assert.ok(tagged);
+  assert.ok(tagged.text.includes("40 products carry an Amazon product ID tag"));
+  const mixed = scoreSignals(store({ supplierImageIds: 1, supplierTagIds: 1 }), rules);
+  assert.ok(mixed.fired.some(f => f.id === "supplier_images"), "one image and one tag reach the minimum of 2");
+  const one = scoreSignals(store({ supplierTagIds: 1 }), rules);
+  assert.ok(!one.fired.some(f => f.id === "supplier_images"));
+});
+
+test("AI generator file names fire from two images", () => {
+  assert.ok(!scoreSignals(store({ aiImages: 1 }), rules).fired.some(f => f.id === "ai_images"));
+  const v = scoreSignals(store({ aiImages: 3 }), rules);
+  assert.ok(v.fired.find(f => f.id === "ai_images").text.startsWith("3 product images"));
+});
+
 test("Printful alone is context, not a signal", () => {
   const v = scoreSignals(store({ apps: ["printful"] }), rules);
   assert.equal(v.score, 0);

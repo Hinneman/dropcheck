@@ -37,7 +37,54 @@ test("countSupplierImageIds finds AliExpress and Amazon file names", () => {
     "https://cdn.shopify.com/s/files/1/files/61AbCdEfGhL._AC_SL1500.jpg?v=2",
     "https://cdn.shopify.com/s/files/1/products/canvas-sneaker.jpg"
   ];
+  assert.equal(D.countSupplierImageIds(urls), 3);
+});
+
+test("countSupplierImageIds accepts the letter after an AliExpress hash", () => {
+  const urls = [
+    "https://cdn.shopify.com/s/files/1/files/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6g.jpg?v=1",
+    "https://cdn.shopify.com/s/files/1/files/H0123456789abcdef0123456789abcdefk.webp",
+    "https://cdn.shopify.com/s/files/1/files/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6gx.jpg"
+  ];
   assert.equal(D.countSupplierImageIds(urls), 2);
+});
+
+test("countSupplierImageIds finds Alibaba, Taobao and 1688 image IDs", () => {
+  const urls = [
+    "https://cdn.shopify.com/s/files/1/files/O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib.jpg?v=1",
+    "https://cdn.shopify.com/s/files/1/files/O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib_0f0f0f0f.jpg",
+    "https://cdn.shopify.com/s/files/1/files/O1CN01ZyXwVu9tSrQpOnMlK.jpg",
+    "https://cdn.shopify.com/s/files/1/files/O1CN-poster.jpg"
+  ];
+  assert.equal(D.countSupplierImageIds(urls), 2);
+});
+
+test("countAiImages finds default AI generator file names", () => {
+  const urls = [
+    "https://cdn.shopify.com/s/files/1/files/ChatGPT_Image_Sep_4_2026_12_32_05_AM_0f0f.png?v=1",
+    "https://cdn.shopify.com/s/files/1/files/ChatGPTImage31aug2026_16_04_15.png",
+    "https://cdn.shopify.com/s/files/1/files/Gemini_Generated_Image_ab12cd.png",
+    "https://cdn.shopify.com/s/files/1/files/DALL%C2%B7E_2026-01-01_12.00.00.png",
+    "https://cdn.shopify.com/s/files/1/files/hf_20260703_190536_0f0f0f0f-0f0f-4f0f-8f0f-0f0f0f0f0f0f.png",
+    "https://cdn.shopify.com/s/files/1/files/hf_20260703_190537_0f0f0f0f-0f0f-4f0f-af0f-0f0f0f0f0f0f-edited-2.webp",
+    "https://cdn.shopify.com/s/files/1/files/chatgpt-guide-cover.jpg",
+    "https://cdn.shopify.com/s/files/1/files/gemini-necklace.jpg",
+    "https://cdn.shopify.com/s/files/1/files/hf_logo.png",
+    "https://cdn.shopify.com/s/files/1/files/hf_20260703_190538_0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f.png"
+  ];
+  assert.equal(D.countAiImages(urls), 6);
+});
+
+test("countSupplierTags counts distinct Amazon product ID tags", () => {
+  const tags = ["amazon-B0AAAA1111", "amazon-B0AAAA1111", " amazon-b0bbbb2222", "Summer",
+                "amazon-best-seller", "import_2019_02_28_103625"];
+  assert.equal(D.countSupplierTags(tags), 2);
+  assert.equal(D.countSupplierTags([]), 0);
+});
+
+test("countImportSourceTags counts import-source ID tags only", () => {
+  const tags = ["import-source:0123456789abcdef01234567", "import-source:abc", "import_2019_03_16_160504"];
+  assert.equal(D.countImportSourceTags(tags), 1);
 });
 
 test("registrableDomain strips subdomains", () => {

@@ -19,6 +19,8 @@ export function store(overrides = {}) {
                 emails: ["hej@example.se"], boilerplate: [] },
     paymentMethods: ["visa", "klarna", "swish"],
     supplierImageIds: 0,
+    supplierTagIds: 0,
+    aiImages: 0,
     domain: { name: "example.se", createdAt: "2015-01-01T00:00:00Z", ageDays: 4000 },
     ...overrides
   };

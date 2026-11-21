@@ -14,8 +14,10 @@ Each signal scores points in one of four categories. Every category is capped, s
 single kind of evidence can decide the verdict on its own.
 
 - **Supply:** dropshipping fulfilment apps (DSers, CJ Dropshipping, Zendrop, AutoDS,
-  Spocket, Oberlo), product images that keep AliExpress or Amazon file names, stated
-  delivery times of 10 days or more, themes marketed to dropshippers.
+  Spocket, Oberlo), product images that keep AliExpress, Alibaba or Amazon file names,
+  product tags with Amazon product IDs left by import apps, product images that keep the
+  default file name of an AI image generator, stated delivery times of 10 days or more,
+  themes marketed to dropshippers.
 - **Identity:** a domain registered less than six months ago, no company registration
   or VAT number, a free-mail contact address, unfilled template text.
 - **Sales pressure:** countdown timers, "only N left" and "N people viewing" counters.
@@ -77,7 +79,7 @@ the false positive rate on the legitimate stores (target: under 10 %).
 
 Analysis runs in the browser. Besides the page itself, DropCheck makes these requests:
 
-- **The store:** up to seven of its own pages (terms, shipping, contact and similar)
+- **The store:** up to nine of its own pages (terms, shipping, contact, legal notice and similar)
   and, on Shopify, `/products.json`, all without cookies and cached 24 hours. Product
   images are loaded from the store only when the user clicks "Show product images".
 - **rdap.org:** the registrable domain name, to find its registration date. rdap.org

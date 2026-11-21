@@ -91,11 +91,13 @@
   }
 
   // Marketplace image file names that survive re-upload to the shop's own CDN:
-  //   AliExpress: "S" or "H" + 32 hex characters        Sd1c2...f6.jpg
+  //   AliExpress: "S" or "H" + 32 hex characters, usually one more letter  Sd1c2...f6g.jpg
   //   Amazon:     11-character ID + "._AC_"-style suffix 61AbCdEfGhL._AC_SL1500.jpg
+  //   Alibaba, Taobao, 1688: "O1CN01" + 17 characters   O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib.jpg
   const SUPPLIER_FILE_RES = [
-    /^([SH][0-9a-f]{32})(?:[._-]|$)/i,
-    /^([0-9A-Za-z+-]{9,12})\._(?:AC|SX|SY|SL|UL|UX|SS|SR)\w*/
+    /^([SH][0-9a-f]{32})[a-z]?(?:[._-]|$)/i,
+    /^([0-9A-Za-z+-]{9,12})\._(?:AC|SX|SY|SL|UL|UX|SS|SR)\w*/,
+    /^(O1CN01[0-9A-Za-z]{15,20})(?=[_!.-]|$)/
   ];
 
   function countSupplierImageIds(urls) {
@@ -108,6 +110,44 @@
       }
     }
     return ids.size;
+  }
+
+  // Default file names of AI image generators, kept unchanged on product images:
+  //   ChatGPT_Image_Sep_4_2026_12_32_05_AM.png, ChatGPTImage31aug2026.png,
+  //   Gemini_Generated_Image_ab12cd.png, DALL-E_2026-01-01_12.00.00.png,
+  //   Higgsfield: hf_20260703_190536_<UUID v4>.png. Nothing is required after the UUID,
+  //   so edited copies and Shopify's suffixed duplicates still count.
+  const AI_FILE_RE = new RegExp("^(?:chatgpt[\\s_-]?image|gemini[\\s_-]?generated[\\s_-]?image|" +
+    "dall[\\s_.\\u00b7-]?e[\\s_-]+\\d{4}|" +
+    "hf_\\d{8}_\\d{6}_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})", "i");
+
+  function countAiImages(urls) {
+    const files = new Set();
+    for (const url of urls) {
+      let file = String(url).split("?")[0].split("/").pop() || "";
+      try { file = decodeURIComponent(file); } catch { /* keep as is */ }
+      if (AI_FILE_RE.test(file)) files.add(file);
+    }
+    return files.size;
+  }
+
+  // Product tags written by marketplace import apps: "amazon-B0XXXXXXXX" carries the
+  // Amazon product ID (ASIN). Distinct IDs, from Shopify product tags.
+  const SUPPLIER_TAG_RE = /^amazon-(B0[A-Z0-9]{8})$/i;
+
+  function countSupplierTags(tags) {
+    const ids = new Set();
+    for (const tag of tags) {
+      const m = String(tag).trim().match(SUPPLIER_TAG_RE);
+      if (m) ids.add(m[1].toUpperCase());
+    }
+    return ids.size;
+  }
+
+  // "import-source:" + 24 hex characters, written by an import app not yet identified.
+  // Logged for the evaluation only, not scored.
+  function countImportSourceTags(tags) {
+    return tags.filter(t => /^import-source:[0-9a-f]{24}$/i.test(String(t).trim())).length;
   }
 
   // ---------- Domain ----------
@@ -325,6 +365,7 @@
   globalThis.DropCheckDetectors = {
     APP_SIGNATURES, DS_THEMES,
     detectPlatform, detectApps, detectTheme, detectPaymentMethods, countSupplierImageIds,
+    countSupplierTags, countImportSourceTags, countAiImages,
     registrableDomain, tldInfo,
     detectCountdownText, detectStockUrgency, detectViewerCount,
     extractShippingQuotes,

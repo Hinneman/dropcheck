@@ -74,6 +74,7 @@ extension/                 load this folder in Chrome
 assets/icon.svg            icon source, rendered at every size
 scripts/render-icons.js    renders the PNG icons with Puppeteer
 scripts/sync-faq.js        rebuilds the site's FAQ structured data (npm run sync-faq)
+.github/workflows/         test.yml (checks), pages.yml (site), release.yml (zip for a tag)
 scripts/store-screenshots.js  renders the Chrome Web Store graphics from fictional Swedish
                            and Norwegian shops (npm run store-screenshots, -- --lang sv|nb)
 site/                      GitHub Pages site (en, sv/, no/, privacy.html), deployed by pages.yml
@@ -106,6 +107,11 @@ test/                      node:test unit tests; se.test.js and no.test.js hold 
   once, default 4; keep it low, Shopify rate-limits per IP). The harness loads a temporary copy
   of the extension with automatic scanning granted, since a headless run cannot click
   through the permission prompt.
+- **Release:** bump the version (a test checks it matches everywhere), commit, then push a
+  tag `vX.Y.Z`. The release workflow checks that the tag matches the manifest, runs all
+  checks, builds `dropcheck-X.Y.Z.zip` from `extension/` on GitHub's runners, attests where
+  it was built and attaches it to a draft release; write the notes and publish. Anyone can
+  check a downloaded zip with `gh attestation verify dropcheck-X.Y.Z.zip --repo Hinneman/dropcheck`.
 
 After any change to `rules/signals.json` or a detector, re-run the evaluation and watch
 the false positive rate on the legitimate stores (target: under 10 %).

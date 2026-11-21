@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DropCheck",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Flags dropshipping signals on Swedish and Norwegian online stores and explains each one. Observations, not accusations.",
   "permissions": ["storage", "activeTab", "scripting", "alarms"],
   "optional_host_permissions": ["https://*/*"],

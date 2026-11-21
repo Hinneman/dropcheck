@@ -67,7 +67,10 @@ extension/                 load this folder in Chrome
 assets/icon.svg            icon source, rendered at every size
 scripts/render-icons.js    renders the PNG icons with Puppeteer
 scripts/sync-faq.js        rebuilds the site's FAQ structured data (npm run sync-faq)
-site/                      GitHub Pages site (en, sv/, no/), deployed by pages.yml
+scripts/store-screenshots.js  renders the Chrome Web Store graphics from two fictional
+                           shops (npm run store-screenshots)
+site/                      GitHub Pages site (en, sv/, no/, privacy.html), deployed by pages.yml
+store/                     Chrome Web Store listing texts and graphics
 eval/
   run.js                   Puppeteer harness -> eval/results.csv + false positive rate
 test/                      node:test unit tests; se.test.js and no.test.js hold the

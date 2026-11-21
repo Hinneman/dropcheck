@@ -8,7 +8,8 @@
     "test": "node --test \"test/*.test.js\"",
     "eval": "node eval/run.js",
     "icons": "node scripts/render-icons.js",
-    "sync-faq": "node scripts/sync-faq.js"
+    "sync-faq": "node scripts/sync-faq.js",
+    "store-screenshots": "node scripts/store-screenshots.js"
   },
   "devDependencies": {
     "puppeteer": "^25.18.1"

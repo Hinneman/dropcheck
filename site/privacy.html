@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DropCheck privacy policy</title>
+<meta name="description" content="What the DropCheck Chrome extension reads, what it stores, and what it sends: only a shop's domain name to rdap.org, and an image URL to Google Lens when you click it.">
+<link rel="canonical" href="https://hinneman.github.io/dropcheck/privacy.html">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="icon.svg" alt="" width="52" height="52">
+    <h1>Privacy policy</h1>
+  </div>
+  <p class="lead">DropCheck analyses web shops in your browser. It has no server, no account and
+  no analytics, and it never sells or shares data.</p>
+  <nav class="lang" aria-label="Site"><a href="./">DropCheck home</a></nav>
+</header>
+
+<main>
+<p>Effective 21 November 2026. This policy covers the DropCheck Chrome extension, version 0.3.0
+and later.</p>
+
+<h2>What DropCheck reads</h2>
+<ul>
+<li><strong>The page you check.</strong> When you click the DropCheck icon, it reads the open
+page: its text, links, image addresses and page code. With <em>Check shops automatically</em>
+turned on, it reads every https page you open in the same way, to decide whether it is a shop.</li>
+<li><strong>The shop's own pages.</strong> On a page that looks like a shop, DropCheck also reads
+up to nine of that shop's own pages (terms, shipping, returns, contact, legal notice and similar)
+and, on Shopify shops, the public product list at <code>/products.json</code>. These requests go
+only to the shop itself and are sent without your cookies, so they cannot see your account,
+cart or orders.</li>
+</ul>
+<p>DropCheck does not read what you type into forms, and it does not read pages that are not
+https. When it fetches a shop's pages itself, it skips account, login, cart and checkout pages.</p>
+
+<h2>What DropCheck keeps</h2>
+<ul>
+<li><strong>Derived facts, not page content.</strong> From what it reads, DropCheck keeps only
+the facts it needs for a verdict, such as delivery times, org. numbers found, the number of
+supplier image names and the shop's domain name. Page text is not stored.</li>
+<li><strong>Where.</strong> In your browser's extension storage, on your computer. Facts about a
+shop are kept for 24 hours and domain registration dates for 30 days. Verdicts are kept in
+memory until you close the browser. Older entries are deleted automatically.</li>
+<li><strong>Your setting.</strong> Whether automatic checking is turned on.</li>
+</ul>
+
+<h2>What DropCheck sends</h2>
+<ul>
+<li><strong>rdap.org:</strong> the shop's domain name (for example <code>example.com</code>), to
+look up when the domain was registered. rdap.org forwards the lookup to the registry for that
+domain. Nothing else is sent: no page address, no page content, nothing about you. This is not
+done for .se, .dk and .de domains, whose registries publish no registration date.</li>
+<li><strong>Google Lens:</strong> the address of a product image, only when you click that image
+under "Find the source". Google's own privacy policy applies to that search.</li>
+<li><strong>The shop:</strong> product images are loaded from the shop only when you click
+"Show product images".</li>
+</ul>
+<p>Nothing else leaves your browser. DropCheck has no server of its own and does not collect
+statistics, crash reports or usage data.</p>
+
+<h2>Permissions</h2>
+<ul>
+<li><strong>activeTab and scripting:</strong> to read the page you check when you click the icon.</li>
+<li><strong>Access to https sites (optional):</strong> asked for only when you turn on
+<em>Check shops automatically</em>, so pages can be checked without clicking the icon. Turning
+the setting off removes the permission again.</li>
+<li><strong>storage:</strong> to keep the facts and setting described above.</li>
+<li><strong>alarms:</strong> to delete expired entries regularly.</li>
+</ul>
+
+<h2>Your choices</h2>
+<p>You can turn automatic checking off in the popup at any time. Removing the extension deletes
+everything it stored.</p>
+
+<h2>Changes and contact</h2>
+<p>Changes to this policy are published on this page and in the
+<a href="https://github.com/Hinneman/dropcheck">source code repository</a>, where every change
+can be followed. Questions can be asked in the repository's
+<a href="https://github.com/Hinneman/dropcheck/issues">issues</a>.</p>
+</main>
+
+<footer>
+<p>DropCheck is open source: <a href="https://github.com/Hinneman/dropcheck">github.com/Hinneman/dropcheck</a>.</p>
+</footer>
+</body>
+</html>

@@ -15,4 +15,7 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://hinneman.github.io/dropcheck/"/>
     <xhtml:link rel="alternate" hreflang="sv" href="https://hinneman.github.io/dropcheck/sv/"/>
   </url>
+  <url>
+    <loc>https://hinneman.github.io/dropcheck/privacy.html</loc>
+  </url>
 </urlset>

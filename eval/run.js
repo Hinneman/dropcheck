@@ -108,7 +108,9 @@ async function openProbe(browser, staticScripts) {
 async function verdictFor(probe, page, url) {
   const started = Date.now();
   await page.bringToFront();
-  await page.goto(url, { waitUntil: "networkidle2", timeout: PAGE_TIMEOUT_MS }).catch(err => {
+  // The content script runs at document_idle on its own and the loop below waits for
+  // its verdict, so waiting for the network to go quiet only adds time.
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT_MS }).catch(err => {
     if (!/timeout/i.test(err.message)) throw err;   // slow pages still get scanned
   });
   const host = new URL(page.url()).hostname;
@@ -130,6 +132,13 @@ function basis(s) {
     domainAgeDays: s?.domain?.ageDays ?? "",
     hasCompanyId: s?.identity ? String(s.identity.hasCompanyId) : "",
     orgNumbers: (s?.identity?.orgNumbers || []).join(" "),
+    // Oldest of at most 250 products from /products.json, so a capped catalog may be older.
+    oldestProduct: s?.catalog?.oldestProduct ?? "",
+    productCount: s?.catalog?.productCount ?? "",
+    supplierImageIds: s?.supplierImageIds ?? "",
+    supplierTagIds: s?.supplierTagIds ?? "",
+    aiImages: s?.aiImages ?? "",
+    importSourceTags: s?.catalog?.importSourceTags ?? "",
     pagesScanned: (s?.pagesScanned || []).join(" ")
   };
 }
@@ -173,25 +182,32 @@ async function main() {
     const probe = await openProbe(browser, staticScripts);
     const page = await browser.newPage();
     await page.setViewport({ width: 1366, height: 900 });
+    const runStarted = Date.now();
+    const secondsSince = t => ((Date.now() - t) / 1000).toFixed(1);
     for (const row of rows) {
       process.stdout.write(`${row.url} ... `);
+      const started = Date.now();
       try {
         const { verdict, signals } = await verdictFor(probe, page, row.url);
         results.push({ ...row, score: verdict.score, band: verdict.band,
-                       rulesFired: verdict.fired.map(f => f.id).join(" "), ...basis(signals) });
-        console.log(`${verdict.band} (${verdict.score})`);
+                       rulesFired: verdict.fired.map(f => f.id).join(" "), ...basis(signals),
+                       seconds: secondsSince(started) });
+        console.log(`${verdict.band} (${verdict.score})  ${secondsSince(started)} s`);
       } catch (err) {
-        results.push({ ...row, score: "", band: "", rulesFired: "", error: err.message });
-        console.log(`error: ${err.message}`);
+        results.push({ ...row, score: "", band: "", rulesFired: "", error: err.message,
+                       seconds: secondsSince(started) });
+        console.log(`error: ${err.message}  ${secondsSince(started)} s`);
       }
     }
+    console.log(`\nTotal ${secondsSince(runStarted)} s for ${rows.length} stores`);
   } finally {
     await browser.close();
     rmSync(extensionDir, { recursive: true, force: true });
   }
 
   const header = ["url", "label", "score", "band", "rulesFired", "market", "domain", "domainAgeDays",
-                  "hasCompanyId", "orgNumbers", "pagesScanned", "error"];
+                  "hasCompanyId", "orgNumbers", "oldestProduct", "productCount", "supplierImageIds",
+                  "supplierTagIds", "aiImages", "importSourceTags", "pagesScanned", "seconds", "error"];
   writeFileSync(opts.out, [header.join(","), ...results.map(r => header.map(h => csvCell(r[h])).join(","))].join("\n") + "\n");
   console.log(`\nWrote ${path.relative(ROOT, opts.out)}`);
   summarise(results);

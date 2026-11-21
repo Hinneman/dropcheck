@@ -1,0 +1,13 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  // Recommended defaults, and GitHub Actions kept pinned to commit digests
+  // (tags can be moved) with the version in a comment.
+  extends: ["config:recommended", "helpers:pinGitHubActionDigests"],
+  schedule: ["before 6am on the first day of the month"],
+  timezone: "Europe/Stockholm",
+  packageRules: [
+    // Dev tooling (ESLint, TypeScript, Puppeteer, types) in one monthly pull request.
+    { matchManagers: ["npm"], matchDepTypes: ["devDependencies"], groupName: "dev dependencies" },
+    { matchManagers: ["github-actions"], groupName: "GitHub Actions" }
+  ]
+}

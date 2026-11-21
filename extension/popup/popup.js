@@ -1,7 +1,7 @@
-import "../shared/config.js";
 import { NO_REGISTRATION_DATE_TLDS, formatTldList } from "../background/score.js";
-import { LANGUAGE_NAMES, bandLabel, noteText, ruleText, ui } from "../i18n/format.js";
-import { getLanguage, setLanguage } from "../i18n/language.js";
+import { bandLabel, noteText, ruleText, ui } from "../i18n/format.js";
+import { getLanguage } from "../i18n/language.js";
+import { HINT_DISMISSED_KEY, setupAutoScan, setupLanguage, translatePage } from "../settings/settings.js";
 
 const $ = id => document.getElementById(id);
 
@@ -27,11 +27,7 @@ function li(text, extra) {
 // The fixed texts: everything marked data-i18n, plus the footer and labels.
 function applyStatic() {
   const t = ui(lang);
-  document.documentElement.lang = lang;
-  for (const el of document.querySelectorAll("[data-i18n]")) {
-    el.textContent = t[/** @type {HTMLElement} */ (el).dataset.i18n];
-  }
-  $("settings").setAttribute("aria-label", t.settings);
+  translatePage(t, lang);
   $("footer").textContent = t.footer(formatTldList(NO_REGISTRATION_DATE_TLDS, t.and));
   $("status").textContent = status(t);
 }
@@ -127,42 +123,50 @@ function setStatus(fn) {
   $("status").textContent = fn(ui(lang));
 }
 
-function setupLanguage() {
-  const select = /** @type {HTMLSelectElement} */ ($("language"));
-  select.replaceChildren(...Object.entries(LANGUAGE_NAMES).map(([code, name]) => {
-    const option = new Option(name, code, false, code === lang);
-    option.lang = code;
-    return option;
-  }));
-  select.addEventListener("change", () => {
-    lang = select.value;
-    setLanguage(lang).catch(err => console.error("DropCheck language setting:", err));
+// The gear swaps the page's result for the settings; Escape or the back arrow swaps back.
+function showSettings(open) {
+  $("settings").hidden = !open;
+  $("page-view").hidden = open;
+  $("open-settings").setAttribute("aria-expanded", String(open));
+  (open ? $("auto-scan") : $("open-settings")).focus();
+}
+
+function setupSettingsView() {
+  $("open-settings").addEventListener("click", () => showSettings($("settings").hidden));
+  $("close-settings").addEventListener("click", () => showSettings(false));
+  $("hint-open").addEventListener("click", () => showSettings(true));
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || $("settings").hidden) return;
+    e.preventDefault();
+    showSettings(false);
+  });
+  setupLanguage(/** @type {HTMLSelectElement} */ ($("language")), lang, chosen => {
+    lang = chosen;
     applyStatic();
     if (entry) render();
   });
 }
 
-// Only toggles the permission; the worker reacts to it. The permission dialog can close
-// the popup before request() resolves.
-const AUTO_SCAN = { origins: [...globalThis.DropCheckConfig.AUTO_SCAN_ORIGINS] };
-
-async function setupAutoScan() {
-  const box = /** @type {HTMLInputElement} */ ($("auto-scan"));
-  box.checked = await chrome.permissions.contains(AUTO_SCAN);
-  box.addEventListener("change", async () => {
-    const granted = box.checked
-      ? await chrome.permissions.request(AUTO_SCAN)
-      : !(await chrome.permissions.remove(AUTO_SCAN));
-    box.checked = granted;
+// A tip under the verdict while automatic scanning is off, until it is closed once.
+async function setupHint() {
+  const autoScan = await setupAutoScan(/** @type {HTMLInputElement} */ ($("auto-scan")),
+    enabled => { if (enabled) $("hint").hidden = true; });
+  /** @type {Record<string, any>} */
+  const stored = await chrome.storage.local.get(HINT_DISMISSED_KEY);
+  $("hint").hidden = autoScan || stored[HINT_DISMISSED_KEY] === true;
+  $("hint-dismiss").addEventListener("click", () => {
+    $("hint").hidden = true;
+    chrome.storage.local.set({ [HINT_DISMISSED_KEY]: true })
+      .catch(err => console.error("DropCheck tip setting:", err));
   });
 }
 
 async function main() {
   lang = await getLanguage();
   applyStatic();
-  setupLanguage();
+  setupSettingsView();
   setupImages();
-  setupAutoScan().catch(err => console.error("DropCheck auto-scan setting:", err));
+  setupHint().catch(err => console.error("DropCheck auto-scan setting:", err));
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   let host = "";
   try { host = new URL(tab.url).hostname; } catch { /* no URL access for this tab */ }

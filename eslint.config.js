@@ -39,7 +39,7 @@ export default [
     languageOptions: { globals: { ...globals.webextensions } }
   },
   {
-    files: ["extension/popup/**/*.js"],
+    files: ["extension/popup/**/*.js", "extension/options/**/*.js", "extension/settings/**/*.js"],
     languageOptions: { globals: { ...globals.browser, ...globals.webextensions } }
   },
   {

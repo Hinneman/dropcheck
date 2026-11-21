@@ -105,8 +105,17 @@ export default {
     autoScan: "Check shops automatically as I browse",
     autoScanHelp: "Shows a warning badge without opening DropCheck. Needs permission to read every " +
       "https:// page you visit; the reading stays in your browser. Off: pages are read only when you " +
-      "open this popup.",
+      "open DropCheck.",
     language: "Language",
+    back: "Back",
+    hint: "DropCheck can also check shops automatically as you browse.",
+    hintOpen: "Show settings",
+    hintDismiss: "Hide this tip",
+    welcomeTitle: "DropCheck is installed",
+    welcomeUse: "Click the DropCheck icon on a shop's page to check it. To keep it one click away, pin " +
+      "it with the puzzle-piece icon in the toolbar.",
+    welcomeAutoScan: "You can also let DropCheck check every shop as you browse:",
+    welcomeLater: "You can change this later under Settings in DropCheck.",
     and: "and",
     footer: tlds => "Observations about this page, not a judgment of the company. Analysis runs in your " +
       "browser; only the domain name is sent to rdap.org, which forwards the lookup to the domain's " +

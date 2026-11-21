@@ -11,8 +11,16 @@
   <header>
     <h1><img src="../icons/icon-32.png" alt="" width="20" height="20"> DropCheck</h1>
     <p id="host" class="muted"></p>
+    <button id="open-settings" type="button" class="icon-button" aria-expanded="false"
+        aria-controls="settings" data-i18n-label="settings"><svg viewBox="0 0 16 16" width="16"
+        height="16" aria-hidden="true" focusable="false"><path d="M6.9 1.5h2.2l.4 1.8 1.2.7 1.8-.6
+        1.1 1.9-1.4 1.3v1.4l1.4 1.3-1.1 1.9-1.8-.6-1.2.7-.4 1.8H6.9l-.4-1.8-1.2-.7-1.8.6-1.1-1.9
+        1.4-1.3V7.3L2.4 6l1.1-1.9 1.8.6 1.2-.7z" fill="none" stroke="currentColor" stroke-width="1.3"
+        stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor"
+        stroke-width="1.3"/></svg></button>
   </header>
 
+  <div id="page-view">
   <p id="status" class="muted" role="status" data-i18n="scanning">Scanning...</p>
 
   <main id="result" hidden>
@@ -21,6 +29,17 @@
       <p id="score" class="muted"></p>
       <p id="caveat" class="caveat" hidden></p>
     </section>
+
+    <p id="hint" class="hint" hidden>
+      <span class="hint-text"><span data-i18n="hint">DropCheck can also check shops automatically
+        as you browse.</span>
+        <button id="hint-open" type="button" class="link-button" data-i18n="hintOpen">Show
+          settings</button></span>
+      <button id="hint-dismiss" type="button" class="icon-button" data-i18n-label="hintDismiss"><svg
+          viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path
+          d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round"/></svg></button>
+    </p>
 
     <section id="fired-section">
       <h2><svg class="icon icon-warning" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"
@@ -50,15 +69,23 @@
       <div id="images" class="images" hidden></div>
     </section>
   </main>
+  </div>
 
-  <section id="settings" class="settings" aria-label="Settings">
+  <section id="settings" class="settings" aria-labelledby="settings-title" hidden>
+    <div class="settings-head">
+      <button id="close-settings" type="button" class="icon-button" data-i18n-label="back"><svg
+          viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path
+          d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <h2 id="settings-title" data-i18n="settings">Settings</h2>
+    </div>
     <label class="check">
       <input id="auto-scan" type="checkbox" aria-describedby="auto-scan-help">
       <span data-i18n="autoScan">Check shops automatically as I browse</span>
     </label>
     <p id="auto-scan-help" class="muted small" data-i18n="autoScanHelp">Shows a warning badge without
       opening DropCheck. Needs permission to read every https:// page you visit; the reading stays in
-      your browser. Off: pages are read only when you open this popup.</p>
+      your browser. Off: pages are read only when you open DropCheck.</p>
     <label class="language">
       <span data-i18n="language">Language</span>
       <select id="language"></select>

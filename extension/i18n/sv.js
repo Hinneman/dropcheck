@@ -103,8 +103,17 @@ export default {
     autoScan: "Kontrollera butiker automatiskt när jag surfar",
     autoScanHelp: "Visar en varningssymbol utan att du öppnar DropCheck. Kräver behörighet att läsa " +
       "varje https://-sida du besöker; läsningen sker i din webbläsare. Av: sidor läses bara när du " +
-      "öppnar det här fönstret.",
+      "öppnar DropCheck.",
     language: "Språk",
+    back: "Tillbaka",
+    hint: "DropCheck kan också kontrollera butiker automatiskt när du surfar.",
+    hintOpen: "Visa inställningar",
+    hintDismiss: "Dölj tipset",
+    welcomeTitle: "DropCheck är installerat",
+    welcomeUse: "Klicka på DropCheck-ikonen på en butiks sida för att kontrollera den. Fäst ikonen med " +
+      "pusselbitsikonen i verktygsfältet, så har du den ett klick bort.",
+    welcomeAutoScan: "Du kan också låta DropCheck kontrollera varje butik medan du surfar:",
+    welcomeLater: "Du kan ändra det senare under Inställningar i DropCheck.",
     and: "och",
     footer: tlds => "Iakttagelser om den här sidan, inte ett omdöme om företaget. Analysen sker i din " +
       "webbläsare; bara domännamnet skickas till rdap.org, som skickar frågan vidare till domänens " +

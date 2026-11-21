@@ -67,8 +67,10 @@ extension/                 load this folder in Chrome
   i18n/                    texts per language (en.js, sv.js, nb.js), the formatter that
                            turns the scorer's rule ids and parameters into sentences, and
                            the language setting
-  popup/                   verdict, fired rules, context, "Find the source",
-                           automatic scanning and language settings
+  popup/                   verdict, fired rules, context, "Find the source", and a
+                           settings view behind the gear button
+  options/                 options page, also opened with ?welcome on first install
+  settings/settings.js     the settings controls shared by popup and options page
   icons/                   PNG icons rendered from assets/ (npm run icons)
   _locales/                store name and description per language (en, sv, no)
 assets/icon.svg            icon source, rendered at every size
@@ -89,7 +91,8 @@ test/                      node:test unit tests; se.test.js and no.test.js hold 
 
 - **Load:** open `chrome://extensions`, turn on Developer mode, click Load unpacked and pick `extension/`.
 - **Modes:** by default a page is read only when the DropCheck icon is clicked (`activeTab`).
-  The popup's "Check shops automatically" box requests the optional `https://*/*`
+  The "Check shops automatically" box (popup settings, options page, welcome page)
+  requests the optional `https://*/*`
   permission; while it is granted, the worker registers the content scripts on every
   https page and the badge warns without opening the popup. Unticking it removes both.
 - **Unit tests:** `npm test` (no dependencies needed). They also check that the docs

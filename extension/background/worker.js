@@ -50,6 +50,19 @@ chrome.runtime.onStartup.addListener(queueAutoScanSync);
 chrome.permissions.onAdded.addListener(queueAutoScanSync);
 chrome.permissions.onRemoved.addListener(queueAutoScanSync);
 
+// A first install opens the welcome page, which explains the icon and offers automatic
+// scanning. Skipped when that is already granted: the eval and screenshot harnesses
+// grant it in the manifest and need no extra tab.
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (reason !== chrome.runtime.OnInstalledReason.INSTALL) return;
+  try {
+    if (await chrome.permissions.contains(AUTO_SCAN)) return;
+    await chrome.tabs.create({ url: chrome.runtime.getURL("options/options.html?welcome") });
+  } catch (err) {
+    console.error("DropCheck welcome page:", err);
+  }
+});
+
 const EXTENSION_ORIGIN = chrome.runtime.getURL("");
 
 // Host and URL come from the sender, never the payload, so one site cannot write

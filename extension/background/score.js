@@ -23,6 +23,12 @@ export const BAND_LABELS = {
 
 const pct = x => `${Math.round(x * 100)} %`;
 
+// Registries that publish no registration date over HTTPS (no RDAP date, WHOIS only),
+// so domain_young can never fire for these domains.
+const NO_REGISTRATION_DATE_TLDS = ["se", "dk", "de"];
+const tldOf = name => name.split(".").pop();
+const hasRegistrationDate = name => !NO_REGISTRATION_DATE_TLDS.includes(tldOf(name));
+
 function formatAge(days) {
   if (days < 60) return `${days} days ago`;
   return `about ${Math.round(days / 30)} months ago`;
@@ -95,7 +101,10 @@ function contextNotes(s) {
   if (s.theme?.name && !s.theme.dsTheme) notes.push(`Theme: ${s.theme.name}.`);
   if (s.domain) {
     if (s.domain.ageDays != null) notes.push(`Domain ${s.domain.name} registered ${s.domain.createdAt.slice(0, 10)}.`);
-    else notes.push(`Domain age for ${s.domain.name} is unknown (registry lookup unavailable).`);
+    else if (!hasRegistrationDate(s.domain.name)) {
+      notes.push(`Domain age is not checked for .${tldOf(s.domain.name)} domains: the registry ` +
+        "does not publish registration dates. This is neither a good nor a bad sign.");
+    } else notes.push(`Domain age for ${s.domain.name} is unknown (registry lookup unavailable).`);
   }
   if (s.tld?.cheap) notes.push(`Uses the .${s.tld.tld} top-level domain.`);
   const market = s.market && MARKETS[s.market.id];

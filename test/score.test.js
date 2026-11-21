@@ -79,7 +79,16 @@ test("market overrides change a rule for that market only", () => {
 });
 
 test("unknown domain age never fires domain_young", () => {
-  const v = scoreSignals(store({ domain: { name: "example.se", createdAt: null, ageDays: null } }), rules);
+  const v = scoreSignals(store({ domain: { name: "example.com", createdAt: null, ageDays: null } }), rules);
   assert.ok(!v.fired.some(f => f.id === "domain_young"));
   assert.ok(v.context.some(n => n.includes("unknown")));
+});
+
+test("domains whose registry publishes no date say so instead of 'unknown'", () => {
+  for (const name of ["example.se", "example.dk", "example.de"]) {
+    const v = scoreSignals(store({ domain: { name, createdAt: null, ageDays: null } }), rules);
+    assert.ok(!v.fired.some(f => f.id === "domain_young"));
+    assert.ok(v.context.some(n => n.includes("not checked")), name);
+    assert.ok(!v.context.some(n => n.includes("unknown")), name);
+  }
 });

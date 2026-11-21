@@ -15,7 +15,7 @@
       "text": "The domain was registered {detail}." },
     { "id": "catalog_young",    "category": "identity", "weight": 15, "params": { "maxAgeDays": 183 },
       "text": "The oldest product in the catalog was added {detail}." },
-    { "id": "no_org_number",    "category": "identity", "weight": 20,
+    { "id": "no_org_number",    "category": "identity", "weight": 20, "params": { "corroborating": true },
       "text": "No company registration or VAT number found on the page or its terms, shipping and contact pages." },
     { "id": "long_shipping",    "category": "supply",   "weight": 20, "params": { "minDays": 10 },
       "text": "Stated delivery time is {detail}." },

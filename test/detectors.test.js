@@ -104,6 +104,13 @@ test("import charges in English and German", () => {
   assert.equal(D.detectImportCharges("Bei Lieferungen in Nicht-EU-Länder sind Zollgebühren vom Empfänger zu tragen."), null);
 });
 
+test("import charges limited to pre-orders are not flagged", () => {
+  assert.equal(D.detectImportCharges("Pre-ordered products may be subject to import charges, duties and taxes that you are responsible for paying."), null);
+  assert.equal(D.detectImportCharges("Vid förbeställning tillkommer importmoms."), null);
+  assert.equal(D.detectImportCharges("Ved forhåndsbestilling betales toll av kunden."), null);
+  assert.equal(D.detectImportCharges("Bei Vorbestellungen sind Zollgebühren vom Käufer zu tragen."), null);
+});
+
 test("extractPhoneCodes reads international numbers", () => {
   assert.deepEqual(D.extractPhoneCodes("Telefon: +1 (555) 010 0199\nTel +46 8 123 456 78"), ["1", "46"]);
   assert.deepEqual(D.extractPhoneCodes("Ring +31612345678 eller +358 40 1234567"), ["31", "358"]);

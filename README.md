@@ -36,8 +36,9 @@ single kind of evidence can decide the verdict on its own.
   warehouse", buyers told to pay import VAT or customs on domestic orders.
 - **Identity:** a domain registered less than six months ago, a product catalog whose
   oldest product was added less than six months ago, no company registration or VAT
-  number, phone numbers only with a foreign country code, an email address at another
-  brand's domain, a free-mail contact address, unfilled template text.
+  number (counted only when the other signs already reach 30 points), phone numbers only
+  with a foreign country code (a neighbouring Nordic country does not count), an email
+  address at another brand's domain, a free-mail contact address, unfilled template text.
 - **Sales pressure:** countdown timers, "only N left" and "N people viewing" counters.
 - **Pricing:** most products marked down 50 % or more from a struck-through price.
 
@@ -104,9 +105,10 @@ Analysis runs in the browser. Besides the page itself, DropCheck makes these req
   and, on Shopify, `/products.json`, all without cookies and cached 24 hours. Product
   images are loaded from the store only when the user clicks "Show product images".
 - **rdap.org:** the registrable domain name, to find its registration date. rdap.org
-  forwards the lookup to the domain's registry. Cached 30 days. Not sent for .se, .dk
-  and .de domains: those registries publish no registration date, so there is nothing
-  to look up.
+  forwards the lookup to the domain's registry. Cached 30 days. Not sent for .se, .no,
+  .dk and .de domains: .se, .dk and .de publish no registration date, and the .no
+  registry registers a domain anew when it changes holder, so its date can be weeks old
+  for a shop that has traded for decades.
 - **Google Lens:** an image URL, only when the user clicks an image under "Find the source".
 
 Nothing else is sent anywhere.

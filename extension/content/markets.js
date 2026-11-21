@@ -36,7 +36,8 @@
       chargeQualifier: ["outside (?:of )?the eu", "outside eu", "non-eu", "outside europe",
                         "international orders", "international shipments", "international customers",
                         "other countries", "abroad", "switzerland", "united kingdom", "uk", "norway",
-                        "usa", "united states", "us orders", "canada", "australia"],
+                        "usa", "united states", "us orders", "canada", "australia",
+                        "pre-?order(?:s|ed)?"],
       noCharge: ["no", "without", "free of"]
     },
     sv: {
@@ -62,7 +63,8 @@
                        "ansvarar (?:du|kunden) för", "kundens ansvar", "ingår inte"],
       chargeQualifier: ["utanför eu", "utanför europa", "utanför sverige", "internationella beställningar",
                         "internationella order", "andra länder", "utlandet", "schweiz", "storbritannien",
-                        "norge", "usa", "stater", "kanada", "australien"],
+                        "norge", "usa", "stater", "kanada", "australien",
+                        "förbeställ(?:ning|ningar|da|d|t)"],
       noCharge: ["inga", "ingen", "utan"]
     },
     nb: {
@@ -87,7 +89,8 @@
       chargedToBuyer: ["betales av", "belastes", "tilkommer", "kundens ansvar",
                        "ansvarlig for", "ikke inkludert"],
       chargeQualifier: ["utenfor eu", "utenfor europa", "utenfor norge", "internasjonale bestillinger",
-                        "andre land", "utlandet", "sveits", "storbritannia", "usa", "kanada", "australia"],
+                        "andre land", "utlandet", "sveits", "storbritannia", "usa", "kanada", "australia",
+                        "forhåndsbestill(?:ing|inger|te|t)"],
       noCharge: ["ingen", "uten"]
     },
     de: {
@@ -110,7 +113,8 @@
       chargedToBuyer: ["zu tragen", "trägt der käufer", "trägt der kunde", "vom käufer", "vom kunden",
                        "vom empfänger", "nicht im preis enthalten", "nicht enthalten"],
       chargeQualifier: ["außerhalb der eu", "nicht-eu", "drittländer", "internationale bestellungen",
-                        "ausland", "schweiz", "großbritannien", "norwegen", "usa", "kanada", "australien"],
+                        "ausland", "schweiz", "großbritannien", "norwegen", "usa", "kanada", "australien",
+                        "vorbestell(?:ung|ungen|t|te)"],
       noCharge: ["keine", "ohne"]
     }
   };
@@ -144,6 +148,7 @@
       langs: ["sv"],
       currencies: ["SEK"],
       phoneCode: "46",
+      neighbourPhoneCodes: ["45", "47", "354", "358"],   // DK, NO, IS, FI
       localPayments: ["klarna", "swish", "invoice", "svea", "qliro", "walley", "trustly"],
       localPaymentLabel: "Klarna, Swish or invoice",
       orgNumber: {
@@ -162,6 +167,7 @@
       langs: ["nb", "nn", "no"],
       currencies: ["NOK"],
       phoneCode: "47",
+      neighbourPhoneCodes: ["45", "46", "354", "358"],   // DK, SE, IS, FI
       localPayments: ["vipps", "klarna", "invoice", "walley", "svea"],
       localPaymentLabel: "Vipps, Klarna or invoice",
       // A bare 9-digit number is too common to trust, so require the keyword or the

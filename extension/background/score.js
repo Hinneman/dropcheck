@@ -23,9 +23,11 @@ export const BAND_LABELS = {
 
 const pct = x => `${Math.round(x * 100)} %`;
 
-// Registries that publish no registration date over HTTPS (no RDAP date, WHOIS only).
+// Registries without a usable registration date. .se, .dk and .de publish none over
+// HTTPS (WHOIS only). .no publishes one, but Norid registers the domain anew when it
+// changes holder, so a shop that has traded for decades can show a date from last month.
 // The worker does not look these domains up, so domain_young never fires for them.
-const NO_REGISTRATION_DATE_TLDS = ["se", "dk", "de"];
+const NO_REGISTRATION_DATE_TLDS = ["se", "dk", "de", "no"];
 const tldOf = name => name.split(".").pop();
 export const hasRegistrationDate = name => !NO_REGISTRATION_DATE_TLDS.includes(tldOf(name));
 
@@ -60,7 +62,7 @@ const TESTS = {
   import_charges(s) {
     return s.importCharge || null;
   },
-  // A weak stand-in for domain age, which .se, .dk and .de registries do not publish.
+  // A weak stand-in for domain age, which .se, .dk, .de and .no registries do not give.
   // A shop that moved to Shopify or re-imported its catalog also looks new.
   catalog_young(s, p) {
     const days = s.catalog?.oldestProductDays;
@@ -104,11 +106,14 @@ const TESTS = {
     return b.length ? b.join(", ") : null;
   },
   // Only when every phone number found is foreign: a shop may list a support line
-  // abroad next to its domestic number.
+  // abroad next to its domestic number. A neighbouring country's code does not count:
+  // Nordic brands sell across the region, and Shopify may serve a Norwegian shop's
+  // Swedish storefront, so the detected market is not always the shop's home.
   foreign_phone(s) {
     const market = s.market && MARKETS[s.market.id];
     const codes = s.identity?.phoneCodes || [];
     if (!market?.phoneCode || !codes.length || codes.includes(market.phoneCode)) return null;
+    if (codes.every(c => (market.neighbourPhoneCodes || []).includes(c))) return null;
     return codes.map(c => `+${c}` + (D.phoneCountry(c) ? ` (${D.phoneCountry(c)})` : "")).join(", ");
   },
   // An address at another brand's domain, even next to the shop's own: policy pages
@@ -145,7 +150,7 @@ function contextNotes(s) {
     if (s.domain.ageDays != null) notes.push(`Domain ${s.domain.name} registered ${s.domain.createdAt.slice(0, 10)}.`);
     else if (!hasRegistrationDate(s.domain.name)) {
       notes.push(`Domain age is not checked for .${tldOf(s.domain.name)} domains: the registry ` +
-        "does not publish registration dates. This is neither a good nor a bad sign.");
+        "publishes no date that shows how long the shop has used the domain. This is neither a good nor a bad sign.");
     } else notes.push(`Domain age for ${s.domain.name} is unknown (registry lookup unavailable).`);
   }
   if (s.tld?.cheap) notes.push(`Uses the .${s.tld.tld} top-level domain.`);
@@ -178,14 +183,15 @@ export function scoreSignals(signals, config) {
   // company registration number is not expected.
   const overrides = (signals.market && config.marketOverrides?.[signals.market.id]) || {};
 
-  const fired = [];
+  const candidates = [];
   for (const base of config.rules) {
     const rule = { ...base, ...overrides[base.id] };
     const test = TESTS[rule.id];
     if (!test || rule.weight <= 0) continue;
     const detail = test(signals, rule.params || {});
     if (detail === null) continue;
-    fired.push({
+    candidates.push({
+      corroborating: rule.params?.corroborating === true,
       id: rule.id,
       category: rule.category,
       weight: rule.weight,
@@ -193,7 +199,21 @@ export function scoreSignals(signals, config) {
       text: rule.text.replace("{detail}", () => detail)
     });
   }
+  // A corroborating rule counts only when the other signs already reach the mixed band:
+  // many honest shops leave out their org. number, so it backs up suspicion but never
+  // starts it.
+  const independent = candidates.filter(f => !f.corroborating);
+  const fired = tally(independent, config).score >= config.bands.mixed ? candidates : independent;
+  for (const f of fired) delete f.corroborating;
+  const { score, categories } = tally(fired, config);
+  for (const f of fired) f.capped = categories[f.category].raw > categories[f.category].counted;
 
+  const band = score >= config.bands.likely ? "likely" : score >= config.bands.mixed ? "mixed" : "none";
+  return { ...base, band, score, fired, categories, context: contextNotes(signals) };
+}
+
+// Category sums, each capped, and their total.
+function tally(fired, config) {
   const raw = {};
   for (const f of fired) raw[f.category] = (raw[f.category] || 0) + f.weight;
   const categories = {};
@@ -203,10 +223,7 @@ export function scoreSignals(signals, config) {
     categories[cat] = { raw: sum, counted: Math.min(sum, cap), cap };
     score += categories[cat].counted;
   }
-  for (const f of fired) f.capped = categories[f.category].raw > categories[f.category].counted;
-
-  const band = score >= config.bands.likely ? "likely" : score >= config.bands.mixed ? "mixed" : "none";
-  return { ...base, band, score, fired, categories, context: contextNotes(signals) };
+  return { score, categories };
 }
 
 function maxScore(config) {

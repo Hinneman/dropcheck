@@ -83,6 +83,30 @@ test("a Swedish store with a Swedish number does not fire foreign_phone", () => 
   assert.ok(scoreSignals(store({ identity: abroad }), rules).fired.some(f => f.id === "foreign_phone"));
 });
 
+test("a neighbouring Nordic country code does not fire foreign_phone", () => {
+  for (const phoneCodes of [["47"], ["45", "358"]]) {
+    const identity = { ...store().identity, phoneCodes };
+    assert.ok(!scoreSignals(store({ identity }), rules).fired.some(f => f.id === "foreign_phone"), phoneCodes.join());
+  }
+  const mixed = { ...store().identity, phoneCodes: ["47", "86"] };
+  assert.ok(scoreSignals(store({ identity: mixed }), rules).fired.some(f => f.id === "foreign_phone"));
+});
+
+test("no_org_number counts only when the other signs already reach mixed", () => {
+  const identity = { ...store().identity, hasCompanyId: false, orgNumbers: [] };
+  const alone = scoreSignals(store({ identity }), rules);
+  assert.ok(!alone.fired.some(f => f.id === "no_org_number"));
+  assert.equal(alone.score, 0);
+  // A free mailbox (10) stays below the mixed band, so the missing number adds nothing.
+  const weak = scoreSignals(store({ identity: { ...identity, emails: ["store@gmail.com"] } }), rules);
+  assert.ok(!weak.fired.some(f => f.id === "no_org_number"));
+  assert.equal(weak.band, "none");
+  // Supplier images (30) reach mixed; then the missing number counts too.
+  const strong = scoreSignals(store({ identity, supplierImageIds: 5 }), rules);
+  assert.ok(strong.fired.some(f => f.id === "no_org_number"));
+  assert.equal(strong.score, 50);
+});
+
 test("catalog_young fires on a new catalog and says when the first page was capped", () => {
   const catalog = { productCount: 250, productTypes: 1, typeSample: [], vendors: [], oldestProductDays: 40 };
   const fired = scoreSignals(store({ catalog }), rules).fired.find(f => f.id === "catalog_young");
@@ -126,7 +150,8 @@ test("a single domestic delivery quote keeps long_shipping off", () => {
 
 test("market overrides change a rule for that market only", () => {
   const config = { ...rules, marketOverrides: { no: { no_org_number: { weight: 0 } } } };
-  const noId = { identity: { ...store().identity, hasCompanyId: false, orgNumbers: [] } };
+  // Supplier images as well: no_org_number counts only once other signs reach "mixed".
+  const noId = { identity: { ...store().identity, hasCompanyId: false, orgNumbers: [] }, supplierImageIds: 5 };
   const norway = scoreSignals(store({ ...noId, market: { id: "no", name: "Norwegian", reason: "" } }), config);
   const sweden = scoreSignals(store(noId), config);
   assert.ok(!norway.fired.some(f => f.id === "no_org_number"));
@@ -140,12 +165,13 @@ test("unknown domain age never fires domain_young", () => {
 });
 
 test("only domains whose registry publishes a date are looked up", () => {
-  for (const name of ["example.no", "example.com", "example.shop"]) assert.ok(hasRegistrationDate(name), name);
-  for (const name of ["example.se", "example.dk", "example.de"]) assert.ok(!hasRegistrationDate(name), name);
+  for (const name of ["example.com", "example.shop"]) assert.ok(hasRegistrationDate(name), name);
+  // .no: Norid's date restarts when the domain changes holder, so it is not used.
+  for (const name of ["example.se", "example.dk", "example.de", "example.no"]) assert.ok(!hasRegistrationDate(name), name);
 });
 
 test("domains whose registry publishes no date say so instead of 'unknown'", () => {
-  for (const name of ["example.se", "example.dk", "example.de"]) {
+  for (const name of ["example.se", "example.dk", "example.de", "example.no"]) {
     const v = scoreSignals(store({ domain: { name, createdAt: null, ageDays: null } }), rules);
     assert.ok(!v.fired.some(f => f.id === "domain_young"));
     assert.ok(v.context.some(n => n.includes("not checked")), name);

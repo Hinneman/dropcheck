@@ -91,7 +91,7 @@ Data the extension handles:
 - **Website content:** yes. Page text, links and image addresses are read to find the signs.
   They are analysed locally and not sent anywhere.
 - **Web history:** yes, narrowly. The domain name of a checked shop is sent to rdap.org to look
-  up its registration date (not for .se, .dk and .de).
+  up its registration date (not for .se, .no, .dk and .de).
 - Everything else (personally identifiable information, health, financial, authentication,
   personal communications, location, user activity): no.
 

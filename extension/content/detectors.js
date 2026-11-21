@@ -99,10 +99,18 @@
   //   AliExpress: "S" or "H" + 32 hex characters, usually one more letter  Sd1c2...f6g.jpg
   //   Amazon:     11-character ID + "._AC_"-style suffix 61AbCdEfGhL._AC_SL1500.jpg
   //   Alibaba, Taobao, 1688: "O1CN01" + 17 characters   O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib.jpg
+  //   Temu: 32 hex characters + "-goods", older files with a 13-digit timestamp first
+  //         0a1b2c3d4e5f60718293a4b5c6d7e8f9-goods.jpg, 1700000000000-0a1b...e8f9-goods.jpg
+  //   Shein: 10-digit timestamp + 32 hex characters, often with a thumbnail size
+  //         17000000000a1b2c3d4e5f60718293a4b5c6d7e8f9_thumbnail_900x.jpg
+  // Temu's other product images, DHgate and Banggood use bare UUIDs, which many systems
+  // generate, so they are not matched.
   const SUPPLIER_FILE_RES = [
     /^([SH][0-9a-f]{32})[a-z]?(?:[._-]|$)/i,
     /^([0-9A-Za-z+-]{9,12})\._(?:AC|SX|SY|SL|UL|UX|SS|SR)\w*/,
-    /^(O1CN01[0-9A-Za-z]{15,20})(?=[_!.-]|$)/
+    /^(O1CN01[0-9A-Za-z]{15,20})(?=[_!.-]|$)/,
+    /^(?:\d{13}-)?([0-9a-f]{32})-goods(?=[._-]|$)/i,
+    /^(1\d{9}[0-9a-f]{32})(?=[._-]|$)/i
   ];
 
   function countSupplierImageIds(urls) {
@@ -167,6 +175,26 @@
     if (parts.length <= 2) return parts.join(".");
     const lastTwo = parts.slice(-2).join(".");
     return MULTI_PART_SUFFIXES.has(lastTwo) ? parts.slice(-3).join(".") : lastTwo;
+  }
+
+  // ---------- Marketplaces ----------
+
+  // Marketplaces from rules/marketplaces.json. On their own pages DropCheck shows a
+  // marketplace warning instead of scoring a shop, or a milder note on an "open"
+  // marketplace whose sellers are partly in Europe. An entry matches on whole registrable
+  // domains ("temu.com"), or on the name part of the domain for brands with many country
+  // domains ("shein" matches shein.se and shein.co.uk). Use labels only for names no other
+  // company is likely to hold under another top-level domain.
+  /**
+   * @param {string} host
+   * @param {{ id: string, name: string, domains?: string[], labels?: string[], open?: boolean }[]} list
+   * @returns {{ id: string, name: string, open: boolean } | null}
+   */
+  function detectMarketplace(host, list) {
+    const domain = registrableDomain(host);
+    const label = domain.split(".")[0];
+    const m = list.find(e => e.domains?.includes(domain) || e.labels?.includes(label));
+    return m ? { id: m.id, name: m.name, open: m.open === true } : null;
   }
 
   const CHEAP_TLDS = ["shop", "store", "online", "site", "xyz", "top", "click", "buzz"];
@@ -515,7 +543,7 @@
     APPS, DS_THEMES,
     detectPlatform, detectApps, detectTheme, detectPaymentMethods, countSupplierImageIds,
     countSupplierTags, countImportSourceTags, countAiImages,
-    registrableDomain, tldInfo,
+    registrableDomain, tldInfo, detectMarketplace,
     detectCountdownText, detectStockUrgency, detectViewerCount,
     extractShippingQuotes, detectReturnsAbroad, detectImportCharges,
     findCompanyIds, detectAddress, extractPhoneCodes, phoneRegions,

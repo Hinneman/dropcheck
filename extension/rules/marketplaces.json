@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "marketplaces": [
+    { "id": "temu",       "name": "Temu",       "domains": ["temu.com"] },
+    { "id": "shein",      "name": "Shein",      "labels": ["shein"] },
+    { "id": "aliexpress", "name": "AliExpress", "labels": ["aliexpress"] },
+    { "id": "alibaba",    "name": "Alibaba",    "domains": ["alibaba.com", "1688.com"] },
+    { "id": "dhgate",     "name": "DHgate",     "domains": ["dhgate.com"] },
+    { "id": "banggood",   "name": "Banggood",   "domains": ["banggood.com"] },
+    { "id": "wish",       "name": "Wish",       "domains": ["wish.com"] },
+    { "id": "amazon",     "name": "Amazon",     "labels": ["amazon"], "open": true },
+    { "id": "cdon",       "name": "CDON",       "labels": ["cdon"],   "open": true },
+    { "id": "fyndiq",     "name": "Fyndiq",     "labels": ["fyndiq"], "open": true }
+  ]
+}

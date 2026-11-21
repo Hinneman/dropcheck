@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { noteText, ruleText } from "../extension/i18n/format.js";
 
-export const rules = JSON.parse(readFileSync(new URL("../extension/rules/signals.json", import.meta.url), "utf8"));
+const readJson = file => JSON.parse(readFileSync(new URL(`../extension/rules/${file}`, import.meta.url), "utf8"));
+export const rules = readJson("signals.json");
+export const marketplaces = readJson("marketplaces.json").marketplaces;
 
 // The English text of a fired rule (by id) and of the context notes.
 export const firedText = (verdict, id) => ruleText(verdict.fired.find(f => f.id === id), "en");

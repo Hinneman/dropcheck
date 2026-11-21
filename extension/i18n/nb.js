@@ -30,7 +30,9 @@ export default {
     likely: "Sannsynlig dropshippingbutikk",
     mixed: "Blandede tegn",
     none: "Ingen tegn funnet",
-    not_store: "Ingen butikk funnet"
+    not_store: "Ingen butikk funnet",
+    marketplace: "Markedsplass som selger fra Kina",
+    open_marketplace: "Markedsplass med eksterne selgere"
   },
 
   markets: {
@@ -42,8 +44,8 @@ export default {
     dropship_app: p => `Siden laster inn kode fra en app for dropshipping-levering (${list(p.apps)}).`,
     supplier_images: p => {
       const parts = [];
-      if (p.images) parts.push(p.images === 1 ? "1 produktbilde har beholdt et filnavn fra AliExpress, Alibaba eller Amazon"
-        : `${p.images} produktbilder har beholdt filnavn fra AliExpress, Alibaba eller Amazon`);
+      if (p.images) parts.push(p.images === 1 ? "1 produktbilde har beholdt et filnavn fra AliExpress, Alibaba, Amazon, Temu eller Shein"
+        : `${p.images} produktbilder har beholdt filnavn fra AliExpress, Alibaba, Amazon, Temu eller Shein`);
       if (p.tags) parts.push(p.tags === 1 ? "1 produkt har en Amazon-produkt-ID-tagg"
         : `${p.tags} produkter har en Amazon-produkt-ID-tagg`);
       return `Produkter kopiert fra en markedsplass: ${parts.join("; ")}.`;
@@ -116,6 +118,7 @@ export default {
     welcomeAutoScan: "Du kan også la DropCheck sjekke hver butikk mens du surfer:",
     welcomeLater: "Du kan endre dette senere under Innstillinger i DropCheck.",
     and: "og",
+    footerMarketplace: "Observasjoner om denne siden, ikke en vurdering av firmaet.",
     footer: tlds => "Observasjoner om denne siden, ikke en vurdering av firmaet. Analysen skjer i " +
       "nettleseren din; bare domenenavnet sendes til rdap.org, som sender oppslaget videre til domenets " +
       `register, for å finne registreringsdatoen. ${tlds}-domener slås ikke opp: registrene deres ` +
@@ -129,6 +132,12 @@ export default {
       none: "Ingenting funnet. Det er ingen garanti for noe.",
       not_store: "Siden ser ikke ut som en nettbutikk, så ingenting ble vurdert."
     },
+    marketplaceNote: name => `${name} er en markedsplass der de fleste varer sendes fra selgere i ` +
+      "Kina. Regn med lengre leveringstid enn fra en norsk butikk, mulig mva, toll eller gebyrer, " +
+      "returer til en adresse i utlandet og varer som ikke alltid oppfyller europeiske sikkerhetskrav.",
+    openMarketplaceNote: name => `${name} selger varer fra mange selgere, og noen av dem sender ` +
+      "fra land utenfor Europa. Sjekk på produktsiden hvem som selger varen og hvor den sendes " +
+      "fra: leveringstid, mva, toll og retur avhenger av selgeren.",
     caveat: "Hvorfor dette kan være feil: små butikker som trykker på bestilling, lager på bestilling " +
       "eller importerer egne design kan vise de samme tegnene som en dropshippingbutikk.",
     categories: { supply: "Leverandør", identity: "Identitet", pressure: "Salgspress", pricing: "Priser" },

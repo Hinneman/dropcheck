@@ -35,8 +35,8 @@ test("English rule texts", () => {
   const text = Object.fromEntries(v.fired.map(f => [f.id, ruleText(f, "en")]));
   assert.deepEqual(text, {
     dropship_app: "The page loads code from a dropshipping fulfilment app (DSers, CJ Dropshipping).",
-    supplier_images: "Products copied from a marketplace: 2 product images keep AliExpress, Alibaba or " +
-      "Amazon file names; 1 product carries an Amazon product ID tag.",
+    supplier_images: "Products copied from a marketplace: 2 product images keep AliExpress, Alibaba, Amazon, " +
+      "Temu or Shein file names; 1 product carries an Amazon product ID tag.",
     ai_images: "3 product images keep the default file name of an AI image generator " +
       "(ChatGPT, Gemini, DALL-E or Higgsfield).",
     returns_abroad: "Returns are sent outside the EU or to an unnamed warehouse: return address in Kina; " +
@@ -118,6 +118,19 @@ test("every rule, note and band renders in every language without gaps", () => {
       bandLabel(v.band, lang), ...v.fired.map(f => ruleText(f, lang)), ...v.context.map(n => noteText(n, lang))
     ]);
     for (const text of texts) assert.ok(text && !/undefined|null|NaN|\[object/.test(text), `${lang}: ${text}`);
+  }
+});
+
+test("the marketplace verdict is worded in every language", () => {
+  assert.equal(bandLabel("marketplace", "en"), "Marketplace selling from China");
+  assert.equal(bandLabel("marketplace", "sv"), "Marknadsplats som säljer från Kina");
+  assert.equal(bandLabel("marketplace", "nb"), "Markedsplass som selger fra Kina");
+  assert.equal(bandLabel("open_marketplace", "en"), "Marketplace with outside sellers");
+  assert.equal(bandLabel("open_marketplace", "sv"), "Marknadsplats med externa säljare");
+  assert.equal(bandLabel("open_marketplace", "nb"), "Markedsplass med eksterne selgere");
+  for (const lang of Object.keys(LANGUAGES)) {
+    assert.ok(LANGUAGES[lang].ui.marketplaceNote("Temu").startsWith("Temu "), lang);
+    assert.ok(LANGUAGES[lang].ui.openMarketplaceNote("Amazon").startsWith("Amazon "), lang);
   }
 });
 

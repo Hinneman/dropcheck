@@ -160,6 +160,12 @@ function contextNotes(s) {
 
 export function scoreSignals(signals, config) {
   const base = { rulesVersion: config.version, maxScore: maxScore(config), bands: config.bands };
+  // A marketplace's own page is not a disguised shop: it gets a fixed warning, no score,
+  // or a milder note on an open marketplace with outside sellers.
+  if (signals?.marketplace) {
+    const band = signals.marketplace.open ? "open_marketplace" : "marketplace";
+    return { ...base, band, marketplace: signals.marketplace, score: 0, fired: [], context: [] };
+  }
   if (!signals || !signals.isStore) {
     return { ...base, band: "not_store", score: 0, fired: [], context: [] };
   }

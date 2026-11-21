@@ -116,7 +116,7 @@
       "name": "Hur ser man om en nätbutik dropshippar?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Typiska tecken är produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon, returer som ska skickas till Kina eller till ett onämnt internationellt lager, att köparen ska betala importmoms eller tull, leveranstider på tio dagar eller mer, en nyregistrerad domän eller ett sortiment som skapats de senaste månaderna, inget organisationsnummer, ett utländskt telefonnummer, nedräkningar och att nästan alla varor är nedsatta 50 procent eller mer. Ett enskilt tecken säger lite; flera tillsammans är en stark indikation."
+        "text": "Typiska tecken är produktbilder som behållit filnamn från AliExpress, Alibaba, Amazon, Temu eller Shein, returer som ska skickas till Kina eller till ett onämnt internationellt lager, att köparen ska betala importmoms eller tull, leveranstider på tio dagar eller mer, en nyregistrerad domän eller ett sortiment som skapats de senaste månaderna, inget organisationsnummer, ett utländskt telefonnummer, nedräkningar och att nästan alla varor är nedsatta 50 procent eller mer. Ett enskilt tecken säger lite; flera tillsammans är en stark indikation."
       }
     },
     {
@@ -132,7 +132,7 @@
       "name": "Varför spelar filnamnen på produktbilderna roll?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Butiker som kopierar annonser från en marknadsplats laddar ofta upp leverantörens bilder oförändrade. Filnamnen behåller marknadsplatsens bild-id, till exempel en lång kod som börjar med O1CN01 (Alibaba, Taobao, 1688) eller en Amazon-kod som slutar på _AC_. En butik som fotograferar sina egna produkter har ingen anledning att ha sådana namn."
+        "text": "Butiker som kopierar annonser från en marknadsplats laddar ofta upp leverantörens bilder oförändrade. Filnamnen behåller marknadsplatsens bild-id, till exempel en lång kod som börjar med O1CN01 (Alibaba, Taobao, 1688), en Amazon-kod som slutar på _AC_ eller en Temu-kod som slutar på -goods. En butik som fotograferar sina egna produkter har ingen anledning att ha sådana namn."
       }
     },
     {
@@ -302,7 +302,7 @@ för att klassas som trolig dropshippingbutik.</p>
 <table>
 <thead><tr><th>Kategori</th><th>Tak</th><th>Tecken</th></tr></thead>
 <tbody>
-<tr><td>Leverantör</td><td>50</td><td>Produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon; Amazon-produkt-id:n från importappar; bilder med standardnamnet från en AI-bildgenerator; returer till Kina eller ett onämnt "internationellt lager"; köparen betalar importmoms eller tull på inrikes beställningar; leverans på tio dagar eller mer; dropshippingappar och teman.</td></tr>
+<tr><td>Leverantör</td><td>50</td><td>Produktbilder som behållit filnamn från AliExpress, Alibaba, Amazon, Temu eller Shein; Amazon-produkt-id:n från importappar; bilder med standardnamnet från en AI-bildgenerator; returer till Kina eller ett onämnt "internationellt lager"; köparen betalar importmoms eller tull på inrikes beställningar; leverans på tio dagar eller mer; dropshippingappar och teman.</td></tr>
 <tr><td>Identitet</td><td>35</td><td>En domän eller ett sortiment som är yngre än sex månader; inget organisations- eller momsnummer; bara utländska telefonnummer; en e-postadress på ett annat varumärkes domän; en gratis e-postadress; platshållartext från en mall som aldrig fyllts i.</td></tr>
 <tr><td>Säljpress</td><td>20</td><td>Nedräkningar, "bara N kvar" och "N personer tittar".</td></tr>
 <tr><td>Priser</td><td>20</td><td>De flesta varor nedsatta 50 % eller mer från ett överstruket pris.</td></tr>
@@ -314,6 +314,12 @@ för att klassas som trolig dropshippingbutik.</p>
 <li class="likely"><strong>Trolig dropshippingbutik</strong> (Likely dropshipper) - 60 poäng eller mer.</li>
 <li class="mixed"><strong>Blandade tecken</strong> (Mixed signals) - 30 till 59 poäng. Värt att titta närmare på.</li>
 <li class="none"><strong>Inga tecken hittades</strong> (No dropshipping signals found) - under 30 poäng.</li>
+<li class="likely"><strong>Marknadsplats som säljer från Kina</strong> - på Temu, Shein, AliExpress,
+Alibaba, DHgate, Banggood och Wish själva. Ingen poäng: de är inga förklädda butiker, men leverans,
+importavgifter, returer och produktsäkerhet fungerar på samma sätt.</li>
+<li><strong>Marknadsplats med externa säljare</strong> - på Amazon, CDON och Fyndiq, som säljer
+varor från många säljare, en del utanför EU. En påminnelse om att kolla vem som säljer varan och varifrån
+den skickas.</li>
 </ul>
 
 <figure class="shot">
@@ -332,7 +338,7 @@ nordiskt grannland räknas inte som utländskt.</p>
 
 <details open>
 <summary>Hur ser man om en nätbutik dropshippar?</summary>
-<p>Typiska tecken är produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon,
+<p>Typiska tecken är produktbilder som behållit filnamn från AliExpress, Alibaba, Amazon, Temu eller Shein,
 returer som ska skickas till Kina eller till ett onämnt internationellt lager, att köparen ska betala
 importmoms eller tull, leveranstider på tio dagar eller mer, en nyregistrerad domän eller ett
 sortiment som skapats de senaste månaderna, inget organisationsnummer, ett utländskt telefonnummer,
@@ -352,7 +358,8 @@ företaget.</p>
 <summary>Varför spelar filnamnen på produktbilderna roll?</summary>
 <p>Butiker som kopierar annonser från en marknadsplats laddar ofta upp leverantörens bilder
 oförändrade. Filnamnen behåller marknadsplatsens bild-id, till exempel en lång kod som börjar med
-<code>O1CN01</code> (Alibaba, Taobao, 1688) eller en Amazon-kod som slutar på <code>_AC_</code>.
+<code>O1CN01</code> (Alibaba, Taobao, 1688), en Amazon-kod som slutar på <code>_AC_</code> eller
+en Temu-kod som slutar på <code>-goods</code>.
 En butik som fotograferar sina egna produkter har ingen anledning att ha sådana namn.</p>
 </details>
 

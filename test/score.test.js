@@ -13,6 +13,20 @@ test("non-store pages are not scored", () => {
   assert.equal(scoreSignals({ host: "example.com", isStore: false }, rules).band, "not_store");
 });
 
+test("a marketplace page gets the marketplace band and no score", () => {
+  const v = scoreSignals({ isStore: false, marketplace: { id: "temu", name: "Temu", open: false } }, rules);
+  assert.equal(v.band, "marketplace");
+  assert.deepEqual(v.marketplace, { id: "temu", name: "Temu", open: false });
+  assert.equal(v.score, 0);
+  assert.deepEqual(v.fired, []);
+});
+
+test("an open marketplace gets the milder band", () => {
+  const v = scoreSignals({ isStore: false, marketplace: { id: "amazon", name: "Amazon", open: true } }, rules);
+  assert.equal(v.band, "open_marketplace");
+  assert.equal(v.score, 0);
+});
+
 test("page-derived detail is inserted literally, not as a replacement pattern", () => {
   const v = scoreSignals(store({ theme: { name: "Shrine $& $' x", dsTheme: "shrine" } }), rules);
   assert.ok(firedText(v, "ds_theme").includes("Shrine $& $' x"));

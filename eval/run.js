@@ -164,7 +164,7 @@ function summarise(results) {
   const byLabel = new Map();
   for (const r of results) {
     const key = r.label.toLowerCase();
-    if (!byLabel.has(key)) byLabel.set(key, { label: r.label, n: 0, likely: 0, mixed: 0, none: 0, not_store: 0, error: 0 });
+    if (!byLabel.has(key)) byLabel.set(key, { label: r.label, n: 0, likely: 0, mixed: 0, none: 0, not_store: 0, marketplace: 0, open_marketplace: 0, error: 0 });
     const s = byLabel.get(key);
     s.n++;
     s[r.band || "error"]++;

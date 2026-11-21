@@ -32,7 +32,9 @@ export default {
     likely: "Likely dropshipper",
     mixed: "Mixed signals",
     none: "No dropshipping signals found",
-    not_store: "No shop detected"
+    not_store: "No shop detected",
+    marketplace: "Marketplace selling from China",
+    open_marketplace: "Marketplace with outside sellers"
   },
 
   markets: {
@@ -44,8 +46,8 @@ export default {
     dropship_app: p => `The page loads code from a dropshipping fulfilment app (${list(p.apps)}).`,
     supplier_images: p => {
       const parts = [];
-      if (p.images) parts.push(p.images === 1 ? "1 product image keeps an AliExpress, Alibaba or Amazon file name"
-        : `${p.images} product images keep AliExpress, Alibaba or Amazon file names`);
+      if (p.images) parts.push(p.images === 1 ? "1 product image keeps an AliExpress, Alibaba, Amazon, Temu or Shein file name"
+        : `${p.images} product images keep AliExpress, Alibaba, Amazon, Temu or Shein file names`);
       if (p.tags) parts.push(p.tags === 1 ? "1 product carries an Amazon product ID tag"
         : `${p.tags} products carry an Amazon product ID tag`);
       return `Products copied from a marketplace: ${parts.join("; ")}.`;
@@ -117,6 +119,8 @@ export default {
     welcomeAutoScan: "You can also let DropCheck check every shop as you browse:",
     welcomeLater: "You can change this later under Settings in DropCheck.",
     and: "and",
+    // On a marketplace's own page nothing is looked up, so only the first sentence applies.
+    footerMarketplace: "Observations about this page, not a judgment of the company.",
     footer: tlds => "Observations about this page, not a judgment of the company. Analysis runs in your " +
       "browser; only the domain name is sent to rdap.org, which forwards the lookup to the domain's " +
       `registry, to find its registration date. ${tlds} domains are not looked up: their registries ` +
@@ -130,6 +134,12 @@ export default {
       none: "Nothing detected. That is not a guarantee of anything.",
       not_store: "This page does not look like an online store, so nothing was scored."
     },
+    marketplaceNote: name => `${name} is a marketplace where most products ship from sellers in China. ` +
+      "Expect longer delivery than from a local shop, possible import VAT, customs or fees, returns to " +
+      "an address abroad, and products that do not always meet EU safety rules.",
+    openMarketplaceNote: name => `${name} sells products from many sellers, some of whom ship from ` +
+      "outside the EU. Check on the product page who sells the item and where it ships from: delivery " +
+      "time, import charges and returns depend on the seller.",
     caveat: "Why this might be wrong: small shops that print on demand, make to order or import their " +
       "own designs can show the same signals as a dropshipper.",
     categories: { supply: "Supply", identity: "Identity", pressure: "Sales pressure", pricing: "Pricing" },

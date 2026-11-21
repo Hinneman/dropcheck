@@ -14,13 +14,19 @@ const AGE_FAIL_TTL_MS = DAY_MS;      // failed lookups: retry next day
 const RDAP_TIMEOUT_MS = 8000;
 const VERDICT_WAIT_MS = 25000;
 
-// A failed load is not cached, so the next signal retries instead of failing until the
-// worker restarts.
-let rulesPromise = null;
-const loadRules = () =>
-  (rulesPromise ??= fetch(chrome.runtime.getURL("rules/signals.json"))
-    .then(r => r.json())
-    .catch(err => { rulesPromise = null; throw err; }));
+// Bundled JSON files, loaded once. A failed load is not cached, so the next signal
+// retries instead of failing until the worker restarts.
+const jsonCache = new Map();
+function loadJson(file) {
+  if (!jsonCache.has(file)) {
+    jsonCache.set(file, fetch(chrome.runtime.getURL(file))
+      .then(r => r.json())
+      .catch(err => { jsonCache.delete(file); throw err; }));
+  }
+  return jsonCache.get(file);
+}
+const loadRules = () => loadJson("rules/signals.json");
+const loadMarketplaces = () => loadJson("rules/marketplaces.json");
 
 const waiters = new Map();   // tabId -> [resolve]
 
@@ -122,13 +128,15 @@ async function pruneLocal() {
 }
 
 async function handleSignals(tabId, page, payload) {
-  const rules = await loadRules();
+  const [rules, marketplaces] = await Promise.all([loadRules(), loadMarketplaces()]);
   const host = page.hostname;
   // The payload is shaped by page content: keep only known fields, bounded in size.
   const clean = sanitizeSignals(payload);
+  // Marketplaces are recognised from the sender's host, never from page content.
+  const marketplace = D.detectMarketplace(host, marketplaces.marketplaces);
   /** @type {Record<string, any>} */
-  const signals = clean.isStore
-    ? { ...clean, host, url: page.href }
+  const signals = marketplace ? { v: 1, isStore: false, marketplace }
+    : clean.isStore ? { ...clean, host, url: page.href }
     : { v: 1, isStore: false };
   if (signals.isStore) signals.domain = await lookupDomain(D.registrableDomain(host));
   const verdict = scoreSignals(signals, rules);
@@ -141,11 +149,13 @@ async function handleSignals(tabId, page, payload) {
 }
 
 // The check mark lives in the badge, not the icon, so it only shows once a store
-// has actually been checked. Non-store pages get no badge. The badge is not read out
-// by screen readers, so the band also goes into the button's title (its accessible name).
-// Errors are ignored: the tab may have closed in the meantime.
+// has actually been checked. Non-store pages get no badge; marketplaces get the warning.
+// The badge is not read out by screen readers, so the band also goes into the button's
+// title (its accessible name). Errors are ignored: the tab may have closed in the meantime.
 const BADGES = {
   likely: ["!", "#b42318"],
+  marketplace: ["!", "#b42318"],
+  open_marketplace: ["i", "#475467"],
   mixed: ["?", "#b54708"],
   none: ["✓", "#16a34a"]
 };

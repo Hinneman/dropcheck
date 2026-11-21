@@ -23,7 +23,7 @@ Is this web shop selling its own products, or reselling items from AliExpress, T
 DropCheck checks the shop you are looking at and lists every sign it finds, with a short explanation of why it matters. It is built for Swedish and Norwegian shops and works best on Shopify, where most dropshipping shops run.
 
 What it looks for
-- Product photos that keep AliExpress, Alibaba or Amazon file names, or the default name of an AI image generator
+- Product photos that keep AliExpress, Alibaba, Amazon, Temu or Shein file names, or the default name of an AI image generator
 - Returns that must be sent to China or to an unnamed "international warehouse"
 - Buyers told to pay import VAT or customs on domestic orders
 - Delivery times of ten days or more
@@ -90,7 +90,8 @@ DropCheck shows signs that the online shop on the current page resells products 
 
 ### Remote code
 
-No. All code and the scoring rules (rules/signals.json) ship in the package.
+No. All code, the scoring rules (rules/signals.json) and the marketplace list
+(rules/marketplaces.json) ship in the package.
 
 ### Data usage
 
@@ -130,7 +131,7 @@ Säljer nätbutiken egna produkter, eller säljer den vidare varor från AliExpr
 DropCheck kontrollerar butiken du tittar på och listar varje tecken den hittar, med en kort förklaring av varför det spelar roll. Tillägget är byggt för svenska och norska butiker och fungerar bäst på Shopify, där de flesta dropshippingbutiker finns.
 
 Det här letar DropCheck efter
-- Produktbilder som behållit filnamn från AliExpress, Alibaba eller Amazon, eller standardnamnet från en AI-bildgenerator
+- Produktbilder som behållit filnamn från AliExpress, Alibaba, Amazon, Temu eller Shein, eller standardnamnet från en AI-bildgenerator
 - Returer som ska skickas till Kina eller till ett onämnt "internationellt lager"
 - Köparen ska betala importmoms eller tull på inrikes beställningar
 - Leveranstider på tio dagar eller mer
@@ -169,7 +170,7 @@ Selger nettbutikken egne produkter, eller videreselger den varer fra AliExpress,
 DropCheck sjekker butikken du ser på og lister opp hvert tegn den finner, med en kort forklaring på hvorfor det betyr noe. Utvidelsen er laget for norske og svenske butikker og fungerer best på Shopify, der de fleste dropshippingbutikker ligger.
 
 Dette ser DropCheck etter
-- Produktbilder som har beholdt filnavn fra AliExpress, Alibaba eller Amazon, eller standardnavnet fra en AI-bildegenerator
+- Produktbilder som har beholdt filnavn fra AliExpress, Alibaba, Amazon, Temu eller Shein, eller standardnavnet fra en AI-bildegenerator
 - Returer som må sendes til Kina eller til et ikke navngitt "internasjonalt lager"
 - Kjøperen må betale toll eller importmva på innenlandske bestillinger
 - Leveringstid på ti dager eller mer

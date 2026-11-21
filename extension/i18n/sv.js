@@ -30,7 +30,9 @@ export default {
     likely: "Trolig dropshippingbutik",
     mixed: "Blandade tecken",
     none: "Inga tecken hittades",
-    not_store: "Ingen butik hittades"
+    not_store: "Ingen butik hittades",
+    marketplace: "Marknadsplats som säljer från Kina",
+    open_marketplace: "Marknadsplats med externa säljare"
   },
 
   markets: {
@@ -42,8 +44,8 @@ export default {
     dropship_app: p => `Sidan laddar kod från en app för dropshipping-leveranser (${list(p.apps)}).`,
     supplier_images: p => {
       const parts = [];
-      if (p.images) parts.push(p.images === 1 ? "1 produktbild har kvar ett filnamn från AliExpress, Alibaba eller Amazon"
-        : `${p.images} produktbilder har kvar filnamn från AliExpress, Alibaba eller Amazon`);
+      if (p.images) parts.push(p.images === 1 ? "1 produktbild har kvar ett filnamn från AliExpress, Alibaba, Amazon, Temu eller Shein"
+        : `${p.images} produktbilder har kvar filnamn från AliExpress, Alibaba, Amazon, Temu eller Shein`);
       if (p.tags) parts.push(p.tags === 1 ? "1 produkt har en Amazon-produkt-id-tagg"
         : `${p.tags} produkter har en Amazon-produkt-id-tagg`);
       return `Produkter kopierade från en marknadsplats: ${parts.join("; ")}.`;
@@ -115,6 +117,7 @@ export default {
     welcomeAutoScan: "Du kan också låta DropCheck kontrollera varje butik medan du surfar:",
     welcomeLater: "Du kan ändra det senare under Inställningar i DropCheck.",
     and: "och",
+    footerMarketplace: "Iakttagelser om den här sidan, inte ett omdöme om företaget.",
     footer: tlds => "Iakttagelser om den här sidan, inte ett omdöme om företaget. Analysen sker i din " +
       "webbläsare; bara domännamnet skickas till rdap.org, som skickar frågan vidare till domänens " +
       `register, för att hitta registreringsdatumet. ${tlds}-domäner slås inte upp: deras register ` +
@@ -128,6 +131,12 @@ export default {
       none: "Inget hittades. Det är ingen garanti för något.",
       not_store: "Sidan ser inte ut som en nätbutik, så inget poängsattes."
     },
+    marketplaceNote: name => `${name} är en marknadsplats där de flesta varor skickas från säljare i ` +
+      "Kina. Räkna med längre leveranstid än från en svensk butik, eventuell importmoms, tull eller " +
+      "avgifter, returer till en adress utomlands och varor som inte alltid uppfyller EU:s säkerhetsregler.",
+    openMarketplaceNote: name => `${name} säljer varor från många säljare, varav en del skickar ` +
+      "från länder utanför EU. Kontrollera på produktsidan vem som säljer varan och varifrån den " +
+      "skickas: leveranstid, importavgifter och returer beror på säljaren.",
     caveat: "Därför kan det vara fel: små butiker som trycker på beställning, tillverkar på order eller " +
       "importerar egna designer kan visa samma tecken som en dropshippingbutik.",
     categories: { supply: "Leverantör", identity: "Identitet", pressure: "Säljpress", pricing: "Priser" },

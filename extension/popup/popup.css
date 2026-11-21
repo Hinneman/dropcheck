@@ -102,6 +102,7 @@ header p {
   color: var(--other-fg);
 }
 .verdict[data-band="likely"] { --verdict-bg: var(--likely-bg); color: var(--likely-fg); }
+.verdict[data-band="marketplace"] { --verdict-bg: var(--likely-bg); color: var(--likely-fg); }
 .verdict[data-band="mixed"]  { --verdict-bg: var(--mixed-bg);  color: var(--mixed-fg); }
 .verdict[data-band="none"]   { --verdict-bg: var(--none-bg);   color: var(--none-fg); }
 .verdict p { margin: 0; }

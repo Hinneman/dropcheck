@@ -121,12 +121,17 @@ function render() {
 
   $("verdict").dataset.band = verdict.band;
   $("band").textContent = band;
-  const gauge = verdict.band !== "not_store" && verdict.bands != null;
+  const scored = ["likely", "mixed", "none"].includes(verdict.band);
+  const gauge = scored && verdict.bands != null;
   $("gauge").hidden = !gauge;
   if (gauge) renderGauge(verdict, t);
-  $("score").textContent = verdict.band === "not_store" ? t.bandNotes.not_store
+  $("score").textContent = verdict.band === "marketplace" ? t.marketplaceNote(verdict.marketplace.name)
+    : verdict.band === "open_marketplace" ? t.openMarketplaceNote(verdict.marketplace.name)
+    : !scored ? t.bandNotes.not_store
     : gauge ? t.bandNotes[verdict.band]
     : `${t.score(verdict.score, verdict.maxScore)} ${t.bandNotes[verdict.band]}`;
+  // No domain lookup happens on a marketplace's own page, so the footer leaves out rdap.org.
+  if (verdict.marketplace) $("footer").textContent = t.footerMarketplace;
   $("caveat").hidden = verdict.band !== "mixed";
   $("caveat").textContent = t.caveat;
 

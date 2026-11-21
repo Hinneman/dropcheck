@@ -29,7 +29,7 @@ Each signal scores points in one of four categories. Every category is capped, s
 single kind of evidence can decide the verdict on its own.
 
 - **Supply:** dropshipping fulfilment apps (DSers, CJ Dropshipping, Zendrop, AutoDS,
-  Spocket, Oberlo), product images that keep AliExpress, Alibaba or Amazon file names,
+  Spocket, Oberlo), product images that keep AliExpress, Alibaba, Amazon, Temu or Shein file names,
   product tags with Amazon product IDs left by import apps, product images that keep the
   default file name of an AI image generator, stated delivery times of 10 days or more,
   themes marketed to dropshippers, returns sent to China or to an unnamed "international
@@ -46,6 +46,12 @@ The verdict is *Likely dropshipper* (60 points or more), *Mixed signals* (30 or 
 *No dropshipping signals found*. The platform, print-on-demand and review apps, cheap
 top-level domains, payment logos and the detected market are shown as context and
 score nothing.
+
+On the marketplaces themselves (Temu, Shein, AliExpress, Alibaba, DHgate, Banggood, Wish)
+DropCheck shows *Marketplace selling from China* instead: a fixed warning about delivery
+times, import charges, returns abroad and product safety, with no score. On Amazon, CDON
+and Fyndiq, which host many sellers, some outside the EU, it shows the milder *Marketplace with outside
+sellers* note, which asks the shopper to check who sells the item and where it ships from.
 
 Sweden and Norway have market profiles: org. number formats with check digits, address
 patterns and local payment methods. Keyword lists cover English, Swedish, Norwegian
@@ -64,6 +70,8 @@ extension/                 load this folder in Chrome
   background/sanitize.js   bounds the signal object a content script sends (pure)
   background/worker.js     service worker: domain age (RDAP), scoring, cache, badge
   rules/signals.json       weights, category caps, band thresholds
+  rules/marketplaces.json  marketplaces that get a warning, or the milder "open" note,
+                           instead of a score; matched by domain or domain name
   i18n/                    texts per language (en.js, sv.js, nb.js), the formatter that
                            turns the scorer's rule ids and parameters into sentences, and
                            the language setting

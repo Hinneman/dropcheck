@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "../extension/content/markets.js";
 import "../extension/content/detectors.js";
+import { marketplaces } from "./helpers.js";
 
 const D = globalThis.DropCheckDetectors;
 
@@ -31,46 +32,69 @@ test("detectPaymentMethods reads icon markup", () => {
 
 test("countSupplierImageIds finds AliExpress and Amazon file names", () => {
   const urls = [
-    "https://cdn.shopify.com/s/files/1/products/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6.jpg?v=1",
-    "https://cdn.shopify.com/s/files/1/products/H0123456789abcdef0123456789abcdefX.webp",
-    "https://cdn.shopify.com/s/files/1/files/61AbCdEfGhL._AC_SL1500.jpg?v=1",
-    "https://cdn.shopify.com/s/files/1/files/61AbCdEfGhL._AC_SL1500.jpg?v=2",
-    "https://cdn.shopify.com/s/files/1/products/canvas-sneaker.jpg"
+    "https://cdn.example.com/products/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6.jpg?v=1",
+    "https://cdn.example.com/products/H0123456789abcdef0123456789abcdefX.webp",
+    "https://cdn.example.com/files/61AbCdEfGhL._AC_SL1500.jpg?v=1",
+    "https://cdn.example.com/files/61AbCdEfGhL._AC_SL1500.jpg?v=2",
+    "https://cdn.example.com/products/canvas-sneaker.jpg"
   ];
   assert.equal(D.countSupplierImageIds(urls), 3);
 });
 
 test("countSupplierImageIds accepts the letter after an AliExpress hash", () => {
   const urls = [
-    "https://cdn.shopify.com/s/files/1/files/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6g.jpg?v=1",
-    "https://cdn.shopify.com/s/files/1/files/H0123456789abcdef0123456789abcdefk.webp",
-    "https://cdn.shopify.com/s/files/1/files/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6gx.jpg"
+    "https://cdn.example.com/files/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6g.jpg?v=1",
+    "https://cdn.example.com/files/H0123456789abcdef0123456789abcdefk.webp",
+    "https://cdn.example.com/files/Sd1c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6gx.jpg"
   ];
   assert.equal(D.countSupplierImageIds(urls), 2);
 });
 
 test("countSupplierImageIds finds Alibaba, Taobao and 1688 image IDs", () => {
   const urls = [
-    "https://cdn.shopify.com/s/files/1/files/O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib.jpg?v=1",
-    "https://cdn.shopify.com/s/files/1/files/O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib_0f0f0f0f.jpg",
-    "https://cdn.shopify.com/s/files/1/files/O1CN01ZyXwVu9tSrQpOnMlK.jpg",
-    "https://cdn.shopify.com/s/files/1/files/O1CN-poster.jpg"
+    "https://cdn.example.com/files/O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib.jpg?v=1",
+    "https://cdn.example.com/files/O1CN01AbCdEf1gHiJkLmNoP__2200000000000-0-cib_0f0f0f0f.jpg",
+    "https://cdn.example.com/files/O1CN01ZyXwVu9tSrQpOnMlK.jpg",
+    "https://cdn.example.com/files/O1CN-poster.jpg"
+  ];
+  assert.equal(D.countSupplierImageIds(urls), 2);
+});
+
+test("countSupplierImageIds finds Temu image IDs, with and without a timestamp", () => {
+  const urls = [
+    "https://cdn.example.com/files/0a1b2c3d4e5f60718293a4b5c6d7e8f9-goods.jpg?v=1",
+    "https://cdn.example.com/files/0a1b2c3d4e5f60718293a4b5c6d7e8f9-goods_1.jpg",
+    "https://cdn.example.com/files/1700000000000-f0e1d2c3b4a5968778695a4b3c2d1e0f-goods.jpeg",
+    // Temu's bare UUIDs and a shop's own "goods" photo are not matched.
+    "https://cdn.example.com/files/12345678-abcd-4ef0-8123-456789abcdef.jpg",
+    "https://cdn.example.com/files/winter-goods.jpg"
+  ];
+  assert.equal(D.countSupplierImageIds(urls), 2);
+});
+
+test("countSupplierImageIds finds Shein image IDs", () => {
+  const urls = [
+    "https://cdn.example.com/files/17000000000a1b2c3d4e5f60718293a4b5c6d7e8f9_thumbnail_900x.jpg?v=1",
+    "https://cdn.example.com/files/17000000000a1b2c3d4e5f60718293a4b5c6d7e8f9.webp",
+    "https://cdn.example.com/files/1600000000f9e8d7c6b5a4938271605f4e3d2c1b0a.jpg",
+    // One hex character short.
+    "https://cdn.example.com/files/1700000000a1b2c3d4e5f60718293a4b5c6d7e8f9.jpg"
   ];
   assert.equal(D.countSupplierImageIds(urls), 2);
 });
 
 test("countAiImages finds default AI generator file names", () => {
   const urls = [
-    "https://cdn.shopify.com/s/files/1/files/ChatGPT_Image_Sep_4_2026_12_32_05_AM_0f0f.png?v=1",
-    "https://cdn.shopify.com/s/files/1/files/ChatGPTImage31aug2026_16_04_15.png",
-    "https://cdn.shopify.com/s/files/1/files/Gemini_Generated_Image_ab12cd.png",
-    "https://cdn.shopify.com/s/files/1/files/DALL%C2%B7E_2026-01-01_12.00.00.png",
-    "https://cdn.shopify.com/s/files/1/files/hf_20260703_190536_0f0f0f0f-0f0f-4f0f-8f0f-0f0f0f0f0f0f.png",
-    "https://cdn.shopify.com/s/files/1/files/hf_20260703_190537_0f0f0f0f-0f0f-4f0f-af0f-0f0f0f0f0f0f-edited-2.webp",
-    "https://cdn.shopify.com/s/files/1/files/chatgpt-guide-cover.jpg",
-    "https://cdn.shopify.com/s/files/1/files/gemini-necklace.jpg",
-    "https://cdn.shopify.com/s/files/1/files/hf_logo.png",
-    "https://cdn.shopify.com/s/files/1/files/hf_20260703_190538_0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f.png"
+    "https://cdn.example.com/files/ChatGPT_Image_Sep_4_2026_12_32_05_AM_0f0f.png?v=1",
+    "https://cdn.example.com/files/ChatGPTImage31aug2026_16_04_15.png",
+    "https://cdn.example.com/files/Gemini_Generated_Image_ab12cd.png",
+    "https://cdn.example.com/files/DALL%C2%B7E_2026-01-01_12.00.00.png",
+    "https://cdn.example.com/files/hf_20260703_190536_0f0f0f0f-0f0f-4f0f-8f0f-0f0f0f0f0f0f.png",
+    "https://cdn.example.com/files/hf_20260703_190537_0f0f0f0f-0f0f-4f0f-af0f-0f0f0f0f0f0f-edited-2.webp",
+    "https://cdn.example.com/files/chatgpt-guide-cover.jpg",
+    "https://cdn.example.com/files/gemini-necklace.jpg",
+    "https://cdn.example.com/files/hf_logo.png",
+    "https://cdn.example.com/files/hf_20260703_190538_0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f.png"
   ];
   assert.equal(D.countAiImages(urls), 6);
 });
@@ -127,6 +151,47 @@ test("sameBrand compares domain names, not top-level domains", () => {
 test("registrableDomain strips subdomains", () => {
   assert.equal(D.registrableDomain("shop.example.se"), "example.se");
   assert.equal(D.registrableDomain("www.example.co.uk"), "example.co.uk");
+});
+
+test("detectMarketplace matches whole domains and domain names", () => {
+  const list = [
+    { id: "bazaar", name: "Bazaar", domains: ["bazaar.example", "bazaar-cn.example"] },
+    { id: "torget", name: "Torget", labels: ["exempeltorget"], open: true }
+  ];
+  const id = host => D.detectMarketplace(host, list)?.id ?? null;
+  assert.equal(id("www.bazaar.example"), "bazaar");
+  assert.equal(id("m.bazaar-cn.example"), "bazaar");
+  assert.equal(id("exempeltorget.se"), "torget");
+  assert.equal(id("www.exempeltorget.co.uk"), "torget");
+  assert.deepEqual(D.detectMarketplace("bazaar.example", list), { id: "bazaar", name: "Bazaar", open: false });
+  assert.deepEqual(D.detectMarketplace("exempeltorget.no", list), { id: "torget", name: "Torget", open: true });
+  // A shop on a subdomain of another site, a longer name, or no match at all.
+  assert.equal(id("bazaar.example.se"), null);
+  assert.equal(id("www.exempeltorgetshop.se"), null);
+  assert.equal(id("www.example.se"), null);
+  assert.equal(D.detectMarketplace("www.example.se", []), null);
+});
+
+// Real marketplace domains: the detector matches exactly these.
+test("rules/marketplaces.json is well formed and matches the listed marketplaces", () => {
+  const ids = marketplaces.map(m => m.id);
+  assert.equal(new Set(ids).size, ids.length, "ids are unique");
+  for (const m of marketplaces) {
+    assert.ok(/^[a-z0-9]+$/.test(m.id) && m.name, m.id);
+    assert.ok((m.domains?.length || 0) + (m.labels?.length || 0) > 0, `${m.id} has domains or labels`);
+    for (const d of m.domains || []) assert.equal(D.registrableDomain(d), d, `${m.id}: ${d} is a registrable domain`);
+    for (const l of m.labels || []) assert.ok(/^[a-z0-9-]+$/.test(l), `${m.id}: ${l}`);
+    assert.ok(m.open === undefined || typeof m.open === "boolean", m.id);
+  }
+  const id = host => D.detectMarketplace(host, marketplaces)?.id ?? null;
+  assert.equal(id("www.temu.com"), "temu");
+  assert.equal(id("m.shein.se"), "shein");
+  assert.equal(id("sv.aliexpress.com"), "aliexpress");
+  assert.equal(id("detail.1688.com"), "alibaba");
+  assert.equal(D.detectMarketplace("www.amazon.se", marketplaces).open, true);
+  assert.equal(id("cdon.se"), "cdon");
+  assert.equal(id("www.fyndiq.no"), "fyndiq");
+  assert.equal(id("www.example.se"), null);
 });
 
 test("urgency detectors", () => {

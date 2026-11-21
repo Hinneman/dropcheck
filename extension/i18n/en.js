@@ -133,7 +133,7 @@ export default {
     caveat: "Why this might be wrong: small shops that print on demand, make to order or import their " +
       "own designs can show the same signals as a dropshipper.",
     categories: { supply: "Supply", identity: "Identity", pressure: "Sales pressure", pricing: "Pricing" },
-    capped: (raw, counted) => `${raw}, capped to ${counted}`,
+    capped: (raw, counted) => `${raw} found, ${counted} counted`,
     lensTitle: "Search this image with Google Lens",
     lensLabel: (i, n) => `Search product image ${i} of ${n} with Google Lens`,
     httpsOnly: "DropCheck only reads https:// pages.",

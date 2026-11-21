@@ -131,7 +131,7 @@ export default {
     caveat: "Därför kan det vara fel: små butiker som trycker på beställning, tillverkar på order eller " +
       "importerar egna designer kan visa samma tecken som en dropshippingbutik.",
     categories: { supply: "Leverantör", identity: "Identitet", pressure: "Säljpress", pricing: "Priser" },
-    capped: (raw, counted) => `${raw}, begränsat till ${counted}`,
+    capped: (raw, counted) => `${raw} hittade, ${counted} räknas`,
     lensTitle: "Sök efter bilden med Google Lens",
     lensLabel: (i, n) => `Sök efter produktbild ${i} av ${n} med Google Lens`,
     httpsOnly: "DropCheck läser bara https://-sidor.",

@@ -159,7 +159,7 @@ function contextNotes(s) {
 }
 
 export function scoreSignals(signals, config) {
-  const base = { rulesVersion: config.version, maxScore: maxScore(config) };
+  const base = { rulesVersion: config.version, maxScore: maxScore(config), bands: config.bands };
   if (!signals || !signals.isStore) {
     return { ...base, band: "not_store", score: 0, fired: [], context: [] };
   }

@@ -25,8 +25,21 @@
 
   <main id="result" hidden>
     <section id="verdict" class="verdict">
-      <p id="band" class="band"></p>
-      <p id="score" class="muted"></p>
+      <div class="verdict-head">
+        <!-- r = 100 / (2 pi), so the circumference is 100 and the dash length is a percentage. -->
+        <div id="gauge" class="gauge" role="meter" aria-labelledby="band" aria-valuemin="0" hidden>
+          <svg viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+            <circle class="gauge-track" cx="18" cy="18" r="15.9155"/>
+            <circle id="gauge-arc" class="gauge-arc" cx="18" cy="18" r="15.9155"
+              stroke-dasharray="0 100"/>
+          </svg>
+          <span id="score-number" class="score-number" aria-hidden="true"></span>
+        </div>
+        <div class="verdict-text">
+          <p id="band" class="band"></p>
+          <p id="score" class="muted"></p>
+        </div>
+      </div>
       <p id="caveat" class="caveat" hidden></p>
     </section>
 

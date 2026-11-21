@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { scoreSignals } from "../extension/background/score.js";
+import { hasRegistrationDate, scoreSignals } from "../extension/background/score.js";
 import { rules, store } from "./helpers.js";
 
 test("a plain Shopify store scores zero", () => {
@@ -82,6 +82,11 @@ test("unknown domain age never fires domain_young", () => {
   const v = scoreSignals(store({ domain: { name: "example.com", createdAt: null, ageDays: null } }), rules);
   assert.ok(!v.fired.some(f => f.id === "domain_young"));
   assert.ok(v.context.some(n => n.includes("unknown")));
+});
+
+test("only domains whose registry publishes a date are looked up", () => {
+  for (const name of ["example.no", "example.com", "example.shop"]) assert.ok(hasRegistrationDate(name), name);
+  for (const name of ["example.se", "example.dk", "example.de"]) assert.ok(!hasRegistrationDate(name), name);
 });
 
 test("domains whose registry publishes no date say so instead of 'unknown'", () => {

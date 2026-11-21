@@ -23,11 +23,11 @@ export const BAND_LABELS = {
 
 const pct = x => `${Math.round(x * 100)} %`;
 
-// Registries that publish no registration date over HTTPS (no RDAP date, WHOIS only),
-// so domain_young can never fire for these domains.
+// Registries that publish no registration date over HTTPS (no RDAP date, WHOIS only).
+// The worker does not look these domains up, so domain_young never fires for them.
 const NO_REGISTRATION_DATE_TLDS = ["se", "dk", "de"];
 const tldOf = name => name.split(".").pop();
-const hasRegistrationDate = name => !NO_REGISTRATION_DATE_TLDS.includes(tldOf(name));
+export const hasRegistrationDate = name => !NO_REGISTRATION_DATE_TLDS.includes(tldOf(name));
 
 function formatAge(days) {
   if (days < 60) return `${days} days ago`;

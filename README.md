@@ -81,7 +81,9 @@ Analysis runs in the browser. Besides the page itself, DropCheck makes these req
   and, on Shopify, `/products.json`, all without cookies and cached 24 hours. Product
   images are loaded from the store only when the user clicks "Show product images".
 - **rdap.org:** the registrable domain name, to find its registration date. rdap.org
-  forwards the lookup to the domain's registry. Cached 30 days.
+  forwards the lookup to the domain's registry. Cached 30 days. Not sent for .se, .dk
+  and .de domains: those registries publish no registration date, so there is nothing
+  to look up.
 - **Google Lens:** an image URL, only when the user clicks an image under "Find the source".
 
 Nothing else is sent anywhere.

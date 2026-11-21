@@ -1,7 +1,7 @@
 // Service worker: receives page signals, adds domain age, scores, caches the verdict.
 import "../content/markets.js";
 import "../content/detectors.js";
-import { scoreSignals } from "./score.js";
+import { hasRegistrationDate, scoreSignals } from "./score.js";
 
 const D = globalThis.DropCheckDetectors;
 const AGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;      // successful lookups
@@ -143,7 +143,9 @@ async function getVerdict(tabId) {
 
 // Domain registration date via RDAP (the JSON successor to WHOIS). Never required:
 // any failure yields ageDays: null and the domain_young rule simply does not fire.
+// Domains whose registry publishes no date are not sent anywhere.
 async function lookupDomain(name) {
+  if (!hasRegistrationDate(name)) return withAge({ name, createdAt: null });
   const key = `age:${name}`;
   const cached = (await chrome.storage.local.get(key))[key];
   if (cached) {

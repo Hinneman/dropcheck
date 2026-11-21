@@ -60,6 +60,14 @@ const TESTS = {
   import_charges(s) {
     return s.importCharge || null;
   },
+  // A weak stand-in for domain age, which .se, .dk and .de registries do not publish.
+  // A shop that moved to Shopify or re-imported its catalog also looks new.
+  catalog_young(s, p) {
+    const days = s.catalog?.oldestProductDays;
+    if (days == null || days >= p.maxAgeDays) return null;
+    const capped = s.catalog.productCount >= 250 ? " (of the first 250 checked)" : "";
+    return `${formatAge(days)}${capped}`;
+  },
   domain_young(s, p) {
     const age = s.domain?.ageDays;
     return age != null && age < p.maxAgeDays ? formatAge(age) : null;
@@ -102,6 +110,15 @@ const TESTS = {
     const codes = s.identity?.phoneCodes || [];
     if (!market?.phoneCode || !codes.length || codes.includes(market.phoneCode)) return null;
     return codes.map(c => `+${c}` + (D.phoneCountry(c) ? ` (${D.phoneCountry(c)})` : "")).join(", ");
+  },
+  // An address at another brand's domain, even next to the shop's own: policy pages
+  // copied from another store, or one operator running several shops.
+  other_domain_email(s) {
+    const own = s.domain?.name || D.registrableDomain(s.host || "");
+    const others = [...new Set((s.identity?.emails || []).map(e => D.registrableDomain(e.split("@")[1])))]
+      .filter(d => !D.isFreemail(d) && !D.isServiceEmailDomain(d) &&
+                   !D.sameBrand(d, own) && !D.sameBrand(d, s.host || own));
+    return others.length ? others.join(", ") : null;
   },
   generic_email(s) {
     const emails = s.identity?.emails || [];

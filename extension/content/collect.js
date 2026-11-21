@@ -349,6 +349,9 @@
       catalog: catalog && {
         productCount: catalog.productCount,
         oldestProduct: catalog.oldestProduct,
+        // From the first 250 products only: a larger catalog may be older.
+        oldestProductDays: catalog.oldestProduct
+          ? Math.floor((Date.now() - Date.parse(catalog.oldestProduct)) / 86400000) : null,
         importSourceTags: catalog.importSourceTags || 0,
         productTypes: catalog.productTypes,
         typeSample: catalog.typeSample,

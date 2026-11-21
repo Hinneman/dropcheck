@@ -83,6 +83,29 @@ test("a Swedish store with a Swedish number does not fire foreign_phone", () => 
   assert.ok(scoreSignals(store({ identity: abroad }), rules).fired.some(f => f.id === "foreign_phone"));
 });
 
+test("catalog_young fires on a new catalog and says when the first page was capped", () => {
+  const catalog = { productCount: 250, productTypes: 1, typeSample: [], vendors: [], oldestProductDays: 40 };
+  const fired = scoreSignals(store({ catalog }), rules).fired.find(f => f.id === "catalog_young");
+  assert.ok(fired.text.includes("40 days ago (of the first 250 checked)"));
+  const old = { ...catalog, oldestProductDays: 900 };
+  assert.ok(!scoreSignals(store({ catalog: old }), rules).fired.some(f => f.id === "catalog_young"));
+});
+
+test("other_domain_email fires on another brand's address, even next to the shop's own", () => {
+  const withEmails = emails => store({ identity: { ...store().identity, emails } });
+  // ".example" is a reserved top-level domain, so "otherbrand.example" is fictional too.
+  const fired = scoreSignals(withEmails(["info@otherbrand.example"]), rules).fired
+    .find(f => f.id === "other_domain_email");
+  assert.ok(fired.text.includes("otherbrand.example"));
+  assert.ok(scoreSignals(withEmails(["hej@example.se", "info@otherbrand.example"]), rules).fired
+    .some(f => f.id === "other_domain_email"));
+  for (const emails of [["hej@example.se", "order@example.com"], ["hej@example-shop.com"],
+                        ["kundservice@klarna.se"], ["store@gmail.com"]]) {
+    assert.ok(!scoreSignals(withEmails(emails), rules).fired.some(f => f.id === "other_domain_email"),
+      emails.join(" "));
+  }
+});
+
 test("Printful alone is context, not a signal", () => {
   const v = scoreSignals(store({ apps: ["printful"] }), rules);
   assert.equal(v.score, 0);

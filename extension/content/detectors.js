@@ -378,7 +378,7 @@
     "hotmail.no", "outlook.no", "live.no", "yahoo.no", "online.no",
     "protonmail.com", "proton.me", "gmx.com", "gmx.de", "mail.com", "yandex.com", "qq.com", "163.com"
   ]);
-  const IGNORED_EMAIL_DOMAINS = /(sentry|wixpress|shopify|example|domain\.com|email\.com|yourdomain|klaviyo|sentry-next)/i;
+  const IGNORED_EMAIL_DOMAINS = /(sentry|wixpress|shopify|example|domain\.com|email\.com|yourdomain|mystore\.com|klaviyo|sentry-next)/i;
 
   function extractEmails(text) {
     const found = new Set();
@@ -396,13 +396,43 @@
     return FREEMAIL.has(domain.toLowerCase());
   }
 
+  // Addresses of payment, delivery, help-desk and consumer bodies that policies quote.
+  // They say nothing about who runs the shop.
+  const SERVICE_EMAIL_DOMAINS = new Set([
+    "klarna.com", "klarna.se", "klarna.no", "paypal.com", "trustly.com", "svea.com", "qliro.com",
+    "walley.se", "walley.no", "vipps.no", "stripe.com", "postnord.se", "postnord.com", "postnord.no",
+    "dhl.com", "dhl.de", "bring.no", "bring.com", "posten.no", "budbee.com", "instabox.se",
+    "zendesk.com", "gorgias.com", "gorgias.io", "freshdesk.com", "helpscout.net", "reamaze.com",
+    "kustomer.com", "gladly.com", "intercom.io", "intercom-mail.com", "tidio.net",
+    "arn.se", "konsumentverket.se", "forbrukertilsynet.no", "forbrukerradet.no", "europa.eu",
+    "google.com", "apple.com", "facebook.com", "instagram.com"
+  ]);
+
+  function isServiceEmailDomain(domain) {
+    return SERVICE_EMAIL_DOMAINS.has(registrableDomain(domain));
+  }
+
+  // Name part of a registrable domain, letters and digits only: "anomi-mode.se" -> "anomimode".
+  function brandLabel(domain) {
+    const name = registrableDomain(domain);
+    const dot = name.indexOf(".");
+    return (dot > 0 ? name.slice(0, dot) : name).replace(/[^a-z0-9]/g, "");
+  }
+
+  // Same brand when one name contains the other ("example" and "exampleshop").
+  function sameBrand(a, b) {
+    const x = brandLabel(a), y = brandLabel(b);
+    const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+    return short.length >= 4 ? long.includes(short) : x === y;
+  }
+
   const BOILERPLATE = [
     [/\[(?:company|store|shop|business)\s*name\]/i, 'placeholder "[Company Name]"'],
     [/\[your\s+(?:company|store|shop|business|email|address|website)[^\]]{0,30}\]/i, 'placeholder "[Your ...]"'],
     [/\[(?:insert|enter)\s[^\]]{2,40}\]/i, 'placeholder "[Insert ...]"'],
     [/\{\{\s*shop\.[a-z_]+\s*\}\}/i, "unrendered template variable"],
     [/\+\d{1,3}[\s-]?\(?\d?\)?[\s-]?123[\s-]?456[\s-]?7/, "placeholder phone number (123 456 7...)"],
-    [/@(?:example|yourdomain|yourstore)\.com/i, "placeholder email address"]
+    [/@(?:example|yourdomain|yourstore|mystore)\.com/i, "placeholder email address"]
   ];
 
   function detectBoilerplate(text) {
@@ -447,7 +477,7 @@
     detectCountdownText, detectStockUrgency, detectViewerCount,
     extractShippingQuotes, detectReturnsAbroad, detectImportCharges,
     findCompanyIds, detectAddress, extractPhoneCodes, phoneCountry,
-    detectMarket, extractEmails, isFreemail, detectBoilerplate,
+    detectMarket, extractEmails, isFreemail, isServiceEmailDomain, sameBrand, detectBoilerplate,
     parsePrices, toNumber, discountOff
   };
 })();

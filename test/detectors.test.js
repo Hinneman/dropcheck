@@ -110,6 +110,13 @@ test("extractPhoneCodes reads international numbers", () => {
   assert.deepEqual(D.extractPhoneCodes("Spara +50 kr och 12+ år"), []);
 });
 
+test("sameBrand compares domain names, not top-level domains", () => {
+  assert.ok(D.sameBrand("example.se", "shop.example.com"));
+  assert.ok(D.sameBrand("example-shop.se", "example.com"));
+  assert.ok(!D.sameBrand("example-mode.se", "examplestockholm.com"));
+  assert.ok(!D.sameBrand("abc.se", "abcd.se"));
+});
+
 test("registrableDomain strips subdomains", () => {
   assert.equal(D.registrableDomain("shop.example.se"), "example.se");
   assert.equal(D.registrableDomain("www.example.co.uk"), "example.co.uk");

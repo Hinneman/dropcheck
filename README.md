@@ -19,9 +19,10 @@ single kind of evidence can decide the verdict on its own.
   default file name of an AI image generator, stated delivery times of 10 days or more,
   themes marketed to dropshippers, returns sent to China or to an unnamed "international
   warehouse", buyers told to pay import VAT or customs on domestic orders.
-- **Identity:** a domain registered less than six months ago, no company registration
-  or VAT number, phone numbers only with a foreign country code, a free-mail contact
-  address, unfilled template text.
+- **Identity:** a domain registered less than six months ago, a product catalog whose
+  oldest product was added less than six months ago, no company registration or VAT
+  number, phone numbers only with a foreign country code, an email address at another
+  brand's domain, a free-mail contact address, unfilled template text.
 - **Sales pressure:** countdown timers, "only N left" and "N people viewing" counters.
 - **Pricing:** most products marked down 50 % or more from a struck-through price.
 
